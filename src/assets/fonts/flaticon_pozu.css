@@ -1,0 +1,157 @@
+@charset "UTF-8";
+@font-face {
+  font-family: "flaticon_pozu";
+  src: url("flaticon_pozu40ce.ttf?94e2b8a27f34577bdb047379005b3269") format("truetype"), url("flaticon_pozu40ce.html?94e2b8a27f34577bdb047379005b3269") format("woff"), url("flaticon_pozu40ce-2.html?94e2b8a27f34577bdb047379005b3269") format("woff2"), url("flaticon_pozu40ce.eot?94e2b8a27f34577bdb047379005b3269#iefix") format("embedded-opentype"), url("flaticon_pozu40ce.svg?94e2b8a27f34577bdb047379005b3269#flaticon_pozu") format("svg");
+}
+
+i[class^="flaticon-"]:before, i[class*=" flaticon-"]:before {
+  font-family: flaticon_pozu !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.flaticon-customer-review:before {
+  content: "";
+}
+
+.flaticon-selection-tool:before {
+  content: "";
+}
+
+.flaticon-computer:before {
+  content: "";
+}
+
+.flaticon-picture:before {
+  content: "";
+}
+
+.flaticon-idea:before {
+  content: "";
+}
+
+.flaticon-table:before {
+  content: "";
+}
+
+.flaticon-color:before {
+  content: "";
+}
+
+.flaticon-color-1:before {
+  content: "";
+}
+
+.flaticon-3d:before {
+  content: "";
+}
+
+.flaticon-hello:before {
+  content: "";
+}
+
+.flaticon-quotation:before {
+  content: "";
+}
+
+.flaticon-drone:before {
+  content: "";
+}
+
+.flaticon-drone-1:before {
+  content: "";
+}
+
+.flaticon-mouse:before {
+  content: "";
+}
+
+.flaticon-link:before {
+  content: "";
+}
+
+.flaticon-mail:before {
+  content: "";
+}
+
+.flaticon-figma:before {
+  content: "";
+}
+
+.flaticon-check:before {
+  content: "";
+}
+
+.flaticon-linkedin:before {
+  content: "";
+}
+
+.flaticon-facebook-app-symbol:before {
+  content: "";
+}
+
+.flaticon-placeholder:before {
+  content: "";
+}
+
+.flaticon-telephone:before {
+  content: "";
+}
+
+.flaticon-behance:before {
+  content: "";
+}
+
+.flaticon-linkedin-1:before {
+  content: "";
+}
+
+.flaticon-instagram:before {
+  content: "";
+}
+
+.flaticon-twitter:before {
+  content: "";
+}
+
+.flaticon-magnifying-glass:before {
+  content: "";
+}
+
+.flaticon-twitter-1:before {
+  content: "";
+}
+
+.flaticon-facebook:before {
+  content: "";
+}
+
+.flaticon-dribbble:before {
+  content: "";
+}
+
+.flaticon-behance-1:before {
+  content: "";
+}
+
+.flaticon-dribbble-logo:before {
+  content: "";
+}
+
+.flaticon-star:before {
+  content: "";
+}
+
+.flaticon-star-1:before {
+  content: "";
+}
+
+.flaticon-star-half-empty:before {
+  content: "";
+}
+/*# sourceMappingURL=flaticon_pozu.css.map */

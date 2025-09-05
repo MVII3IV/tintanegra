@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agregar Pedido</title>
+<link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
+<link rel="stylesheet" href="assets/css/style.css" />
+
+<style>
+body { background: #f5f5f7; }
+.admin-container { max-width: 900px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+h2 { text-align: center; margin-bottom: 20px; }
+.form-group { margin-bottom: 15px; }
+.talla-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.talla-row select, 
+.talla-row input { padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+.talla-row input[type=color] { padding: 0; width: 60px; }
+.talla-row button { padding: 8px 12px; border: none; border-radius: 8px; background: #ff4d4f; color: #fff; cursor: pointer; }
+.add-talla-btn { margin-bottom: 20px; padding: 10px 15px; border: none; border-radius: 12px; background: #007aff; color: #fff; cursor: pointer; }
+.submit-btn { width: 100%; padding: 15px; font-size: 18px; border-radius: 12px; background: #28a745; color: #fff; border: none; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- Bootstrap + Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+<div class="admin-container container mt-4">
+  <h2>Agregar / Editar Pedido</h2>
+  <form id="pedidoForm" enctype="multipart/form-data" class="row g-3">
+
+    <!-- Nombre del cliente -->
+    <div class="col-12">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre del Cliente" class="form-control" required>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="col-12">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-list-task"></i></span>
+        <select id="status" name="status" class="form-control" required>
+          <option value="">Seleccionar Status</option>
+          <option value="Recibida">Orden Recibida</option>
+          <option value="Anticipo recibido">Anticipo Recibido</option>
+          <option value="En producción">En Producción</option>
+          <option value="Finalizada">Finalizada / Lista</option>
+          <option value="Entregada">Entregada</option>
+          <option value="Retrasada">Retrasada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+    </div>
+
+
+    <!-- Fechas en la misma fila -->
+    <div class="col-md-6">
+      <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+        <input type="date" id="fechaInicio" name="fechaInicio" class="form-control" required>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="fechaEntrega" class="form-label">Fecha de Entrega</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+        <input type="date" id="fechaEntrega" name="fechaEntrega" class="form-control" required>
+      </div>
+    </div>
+
+    <!-- Costo -->
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-cash-stack"></i></span>
+        <input type="number" id="costo" name="costo" placeholder="Costo Total del Pedido" class="form-control" required>
+      </div>
+    </div>
+
+    <!-- Anticipo -->
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-wallet2"></i></span>
+        <input type="number" id="anticipo" name="anticipo" placeholder="Anticipo" class="form-control" required>
+      </div>
+    </div>
+
+    <!-- Tallas -->
+    <div class="col-12">
+      <h4>Tallas</h4>
+      <div id="tallasContainer"></div>
+      <button type="button" class="btn btn-outline-primary mt-2" id="addTallaBtn">
+        <i class="bi bi-plus-circle"></i> Agregar Talla
+      </button>
+    </div>
+
+    <!-- Imágenes -->
+    <div class="col-12">
+      <h4>Imágenes</h4>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-image-fill"></i></span>
+        <input type="file" id="imagenes" name="imagenes[]" class="form-control" multiple accept="image/*">
+      </div>
+    </div>
+
+    <!-- Botón guardar -->
+    <div class="col-12 text-end">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-save"></i> Guardar Pedido
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+const tallasContainer = document.getElementById('tallasContainer');
+const addTallaBtn = document.getElementById('addTallaBtn');
+
+
+
+function createTallaRow(t='', c='', color='#000000'){
+  const div = document.createElement('div');
+  div.className = 'row g-2 mb-2'; // usar grid de bootstrap
+
+  // Dropdown de tallas (col-4)
+  const colTalla = document.createElement('div');
+  colTalla.className = 'col-md-4';
+  const select = document.createElement('select');
+  select.name = 'talla[]';
+  select.required = true;
+  select.className = 'form-control';
+  select.innerHTML = `
+    <option value="">Seleccionar Talla</option>
+    <optgroup label="Adulto Unisex">
+      <option value="AU-S">S</option>
+      <option value="AU-M">M</option>
+      <option value="AU-L">L</option>
+      <option value="AU-XL">XL</option>
+      <option value="AU-2XL">2XL</option>
+    </optgroup>
+    <optgroup label="Dama">
+      <option value="D-S">S</option>
+      <option value="D-M">M</option>
+      <option value="D-L">L</option>
+      <option value="D-XL">XL</option>
+      <option value="D-2XL">2XL</option>
+    </optgroup>
+    <optgroup label="Juvenil">
+      <option value="J-XS">XS</option>
+      <option value="J-S">S</option>
+      <option value="J-M">M</option>
+      <option value="J-L">L</option>
+      <option value="J-XL">XL</option>
+    </optgroup>
+  `;
+  select.value = t;
+  colTalla.appendChild(select);
+
+  // Cantidad (col-3)
+  const colCantidad = document.createElement('div');
+  colCantidad.className = 'col-md-3';
+  const cantidadInput = document.createElement('input');
+  cantidadInput.type = 'number';
+  cantidadInput.placeholder = 'Cantidad';
+  cantidadInput.name = 'cantidad[]';
+  cantidadInput.value = c;
+  cantidadInput.min = 1;
+  cantidadInput.required = true;
+  cantidadInput.className = 'form-control';
+  colCantidad.appendChild(cantidadInput);
+
+  // Color (col-3)
+  const colColor = document.createElement('div');
+  colColor.className = 'col-md-3';
+  const colorInput = document.createElement('input');
+  colorInput.type = 'color';
+  colorInput.name = 'color[]';
+  colorInput.value = color;
+  colorInput.className = 'form-control form-control-color';
+  colColor.appendChild(colorInput);
+
+  // Botón eliminar (col-2)
+  const colBtn = document.createElement('div');
+  colBtn.className = 'col-md-2';
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn btn-danger w-100';
+  removeBtn.innerHTML = '<i class="bi bi-trash"></i> Eliminar';
+  removeBtn.onclick = ()=> div.remove();
+  colBtn.appendChild(removeBtn);
+
+  // agregar columnas al row
+  div.appendChild(colTalla);
+  div.appendChild(colCantidad);
+  div.appendChild(colColor);
+  div.appendChild(colBtn);
+
+  tallasContainer.appendChild(div);
+}
+
+
+
+
+addTallaBtn.addEventListener('click', ()=> createTallaRow());
+
+// --- Cargar datos si hay ID en URL ---
+const params = new URLSearchParams(window.location.search);
+const pedidoId = params.get('id');
+
+if(pedidoId){
+  fetch('createOrder.php?id=' + pedidoId)
+    .then(res => res.json())
+    .then(data => {
+      if(data.error){
+        alert(data.error);
+        return;
+      }
+
+      // Rellenar inputs
+      document.getElementById('nombre').value = data.nombre || '';
+      document.getElementById('status').value = data.status || '';
+      document.getElementById('fechaInicio').value = data.fechaInicio || '';
+      document.getElementById('fechaEntrega').value = data.fechaEntrega || '';
+      document.getElementById('costo').value = data.costo || '';
+      document.getElementById('anticipo').value = data.anticipo || '';
+
+      // Rellenar tallas
+      tallasContainer.innerHTML = '';
+      if(Array.isArray(data.tallas)){
+        data.tallas.forEach(t => createTallaRow(t.talla, t.cantidad, t.color));
+      }
+    })
+    .catch(err => console.error('Error al cargar pedido:', err));
+}
+
+// Guardar formulario
+document.getElementById('pedidoForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  if(pedidoId) formData.append('id', pedidoId);
+
+  fetch('saveOrder.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(res => {
+    if(res.success){
+      alert('Pedido guardado con ID: ' + res.id);
+      if(!pedidoId){
+        this.reset();
+        tallasContainer.innerHTML = '';
+      }
+    } else {
+      alert('Error: ' + (res.error || 'desconocido'));
+    }
+  })
+  .catch(err => alert('Error de conexión: ' + err));
+});
+</script>
+
+</body>
+</html>
