@@ -1,12 +1,11 @@
 <?php
+require_once 'config.php'; 
+
 header('Content-Type: application/json');
 
-$host = "db"; // contenedor MySQL
-$dbname = "tintanegra";
-$user = "user";
-$pass = "password";
-
 try {
+    
+error_log("My hostname es Hostname: $host"); // se guarda en el log de PHP
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 

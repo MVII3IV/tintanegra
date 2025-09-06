@@ -1,298 +1,126 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estado de Pedido - Serigrafía</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estado de Pedido</title>
 
-  <!-- CSS provistos -->
-  <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
-  <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" /> 
-  <link rel="stylesheet" href="assets/css/scrollCue.css" /> 
-  <link rel="stylesheet" href="assets/css/boxicons.min.css" />
-  <link rel="stylesheet" href="assets/fonts/flaticon_pozu.css" />
-  <link rel="stylesheet" href="assets/css/navbar.css" />
-  <link rel="stylesheet" href="assets/css/footer.css" />
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <link rel="stylesheet" href="assets/css/responsive.css" /> 
-  <link rel="stylesheet" href="assets/css/rtl.css" />
+    <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="assets/css/scrollCue.css" />
+    <link rel="stylesheet" href="assets/css/boxicons.min.css" />
+    <link rel="stylesheet" href="assets/fonts/flaticon_pozu.css" />
+    <link rel="stylesheet" href="assets/css/navbar.css" />
+    <link rel="stylesheet" href="assets/css/footer.css" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/rtl.css" />
+    <link rel="stylesheet" href="assets/css/orders.css" />
+    <script src="assets/js/swiper-bundle.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
 
-  <style>
-    body { 
-      background: #f7f7f9; 
-      color: #1f2937; 
-      font-family: "Helvetica Neue", Arial, sans-serif; 
-    }
+     
+  </head>
+  <body>
+    <div class="pedido-container">
+      <div class="pedido-header text-center">
+        <h2>Detalles de tu Pedido</h2>
+        <p id="pedido-nombre" class="pedido-subtitle mb-0"></p>
+      </div>
 
-    .pedido-container { 
-      max-width: 1080px; 
-      margin: 48px auto; 
-      padding: 28px; 
-      background: #fff; 
-      border-radius: 20px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06); 
-    }
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper" id="pedido-imagenes"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+      </div>
 
-    .pedido-header h2 { 
-      font-weight: 700; 
-      letter-spacing: 0.2px; 
-    }
+      <div class="pedido-timeline mt-4">
+        <ul class="timeline-list d-flex justify-content-between list-unstyled px-0 mb-0">
+          <li class="timeline-item text-center">
+            <div class="timeline-circle"><i class="bx bx-receipt"></i></div>
+            <div class="timeline-label">Recibida</div>
+          </li>
+          <li class="timeline-item text-center">
+            <div class="timeline-circle"><i class="bx bx-dollar"></i></div>
+            <div class="timeline-label">Anticipo Recibido</div>
+          </li>
+          <li class="timeline-item text-center">
+            <div class="timeline-circle"><i class="bx bx-cog"></i></div>
+            <div class="timeline-label">En Producción</div>
+          </li>
+          <li class="timeline-item text-center">
+            <div class="timeline-circle"><i class="bx bx-check-double"></i></div>
+            <div class="timeline-label">Finalizada</div>
+          </li>
+          <li class="timeline-item text-center">
+            <div class="timeline-circle"><i class="bx bx-package"></i></div>
+            <div class="timeline-label">Entregada</div>
+          </li>
+        </ul>
+      </div>
 
-    .pedido-subtitle { 
-      color: #6b7280; 
-    }
-
-    .swiper { 
-      border-radius: 16px; 
-      overflow: hidden; 
-      margin-top: 16px;     
-      margin-bottom: 40px;  
-      background: #fff; 
-      border: 1px solid #e5e7eb; 
-    }
-
-    .swiper-slide { 
-      display:flex; 
-      align-items:center; 
-      justify-content:center; 
-      background:#fff; 
-    }
-
-    .swiper-slide img { 
-      max-width: 100%; 
-      max-height: 520px; 
-      object-fit: contain; 
-      display: block; 
-    }
-
-    .card-soft { 
-      background: #fff; 
-      border: 1px solid #e5e7eb; 
-      border-radius: 16px; 
-      padding: 18px; 
-      box-shadow: 0 3px 12px rgba(0,0,0,0.04); 
-    }
-
-    .section-title { 
-      font-size: 1.05rem; 
-      font-weight: 600; 
-      margin-bottom: 12px; 
-      color: #111827; 
-    }
-
-    .badge-pill { 
-      border-radius: 999px; 
-      padding: 6px 14px; 
-      font-weight: 600; 
-      font-size: 0.9rem; 
-    }
-
-    .bg-status-produccion { 
-      background:#2563eb; 
-      color:#fff; 
-    }
-
-    .bg-status-entregado  { 
-      background:#10b981; 
-      color:#fff; 
-    }
-
-    .bg-status-pendiente  { 
-      background:#f59e0b; 
-      color:#111827; 
-    }
-
-    .meta { 
-      color:#6b7280; 
-    }
-
-    .table thead th { 
-      background:#fafafa; 
-      border-bottom: 1px solid #e5e7eb; 
-      color:#6b7280; 
-      font-weight:600; 
-    }
-
-    .table tbody tr { 
-      vertical-align: middle; 
-    }
-
-    .color-chip { 
-      width: 22px; 
-      height: 22px; 
-      border-radius: 6px; 
-      display:inline-block; 
-      border:1px solid #e5e7eb; 
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02); 
-    }
-
-    .btn-palette { 
-      border-radius: 10px; 
-    }
-
-    .progress { 
-      height: 10px; 
-      border-radius: 999px; 
-      background:#f1f5f9; 
-    }
-
-    .progress-bar { 
-      border-radius: 999px; 
-    }
-
-    .divider { 
-      height:1px; 
-      background:#eef2f7; 
-      margin: 10px 0 6px; 
-    }
-
-    /* Timeline */
-    .timeline-list {
-      position: relative;
-      margin: 0;
-      padding: 0;
-    }
-
-    .timeline-list::before {
-      content: '';
-      position: absolute;
-      top: 12px;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: #e5e7eb;
-      z-index: 0;
-    }
-
-    .timeline-item {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-    }
-
-    .timeline-circle {
-      width: 24px;
-      height: 24px;
-      background: #e5e7eb;
-      border-radius: 50%;
-      margin: 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-
-    .timeline-item.completed .timeline-circle {
-      background: #2563eb; 
-    }
-
-    .timeline-label {
-      margin-top: 8px;
-      font-size: 0.85rem;
-    }
-
-    .pedido-timeline {
-      margin-bottom: 40px; /* espacio debajo del timeline */
-    }
-
-    .row.g-4 {
-      margin-top: 20px; /* espacio entre timeline y secciones info */
-    }
-  </style>
-</head>
-<body>
-  <div class="pedido-container">
-    <div class="pedido-header text-center">
-      <h2>Detalles de tu Pedido</h2>
-      <p id="pedido-nombre" class="pedido-subtitle mb-0"></p>
-    </div>
-
-    <!-- Carrusel de imágenes -->
-    <div class="swiper mySwiper">
-      <div class="swiper-wrapper" id="pedido-imagenes"></div>
-      <div class="swiper-button-next"></div>
-      <div class="swiper-button-prev"></div>
-      <div class="swiper-pagination"></div>
-    </div>
-
-    <!-- Timeline del pedido -->
-    <div class="pedido-timeline mt-4">
-      <ul class="timeline-list d-flex justify-content-between list-unstyled px-0 mb-0">
-        <li class="timeline-item text-center">
-          <div class="timeline-circle"></div>
-          <div class="timeline-label">Recibida</div>
-        </li>
-        <li class="timeline-item text-center">
-          <div class="timeline-circle"></div>
-          <div class="timeline-label">Anticipo Recibido</div>
-        </li>
-        <li class="timeline-item text-center">
-          <div class="timeline-circle"></div>
-          <div class="timeline-label">En Producción</div>
-        </li>
-        <li class="timeline-item text-center">
-          <div class="timeline-circle"></div>
-          <div class="timeline-label">Finalizada</div>
-        </li>
-        <li class="timeline-item text-center">
-          <div class="timeline-circle"></div>
-          <div class="timeline-label">Entregada</div>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Información -->
-    <div class="row g-4">
-      <div class="col-md-6">
-        <div class="card-soft h-100">
-          <div class="d-flex align-items-center flex-wrap gap-3 mb-2">
-            <span id="pedido-status" class="badge badge-pill"></span>
-            <div class="d-flex align-items-center gap-3">
-              <span class="meta d-flex align-items-center"><i class='bx bx-time-five me-1'></i>Inicio: <span id="pedido-fecha-inicio" class="ms-1"></span></span>
-              <span class="meta d-flex align-items-center"><i class='bx bx-calendar-check me-1'></i>Entrega: <span id="pedido-fecha-entrega" class="ms-1"></span></span>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card-soft h-100 p-3">
+            <div class="section-title mb-3 text-center">Detalles de Entrega</div>
+            <span class="text-center d-block mb-3">Aqui encontraras informacion de recepcion y entrega de tu pedido</span>
+            <div class="d-flex justify-content-center gap-3 mb-2">
+              <span class="badge bg-primary d-flex align-items-center">
+                <i class="bx bx-time-five me-1"></i>
+                Inicio: <span id="pedido-fecha-inicio" class="ms-1"></span>
+              </span>
+              <span class="badge bg-primary d-flex align-items-center">
+                <i class="bx bx-calendar-check me-1"></i>
+                Entrega: <span id="pedido-fecha-entrega" class="ms-1"></span>
+              </span>
             </div>
           </div>
-          <div class="divider"></div>
-          <div class="mt-2 meta">Mantente atento: aquí verás cualquier actualización del estado.</div>
         </div>
-      </div>
 
-      <div class="col-md-6">
-        <div class="card-soft h-100">
-          <div class="section-title">Detalles de Pago</div>
-          <div class="d-flex justify-content-between"><span>Costo total</span><strong id="pedido-costo"></strong></div>
-          <div class="d-flex justify-content-between"><span>Anticipo</span><strong id="pedido-anticipo"></strong></div>
-          <div class="d-flex justify-content-between"><span>Restante</span><strong id="pedido-restante"></strong></div>
-          <div class="progress mt-3" role="progressbar" aria-label="Progreso de pago">
-            <div id="barra-pago" class="progress-bar" style="width:0%"></div>
+        <div class="col-md-6">
+          <div class="card-soft h-100">
+            <div class="section-title">Detalles de Pago</div>
+            <div class="d-flex justify-content-between">
+              <span>Costo total</span><strong id="pedido-costo"></strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Anticipo</span><strong id="pedido-anticipo"></strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Restante</span><strong id="pedido-restante"></strong>
+            </div>
+            <div class="progress mt-3" role="progressbar" aria-label="Progreso de pago">
+              <div id="barra-pago" class="progress-bar" style="width: 0%"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-12">
-        <div class="card-soft">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="section-title mb-0">Tallas y Colores</div>
-            <button class="btn btn-primary btn-sm btn-palette" data-bs-toggle="modal" data-bs-target="#modalPaleta">
-              <i class='bx bx-palette me-1'></i> Ver paleta de colores
-            </button>
-          </div>
-          <div class="table-responsive mt-3">
-            <table class="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Talla</th>
-                  <th>Cantidad</th>
-                  <th>Color</th>
-                </tr>
-              </thead>
-              <tbody id="pedido-tallas"></tbody>
-            </table>
+        <div class="col-12">
+          <div class="card-soft">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="section-title mb-0">Tallas y Colores</div>
+              <button class="btn btn-primary btn-sm btn-palette" data-bs-toggle="modal" data-bs-target="#modalPaleta">
+                <i class="bx bx-palette me-1"></i> Ver paleta de colores
+              </button>
+            </div>
+            <div class="table-responsive mt-3">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Talla</th>
+                    <th>Cantidad</th>
+                    <th>Color</th>
+                  </tr>
+                </thead>
+                <tbody id="pedido-tallas"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Modal Paleta de colores -->
   <div class="modal fade" id="modalPaleta" tabindex="-1" aria-labelledby="modalPaletaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
@@ -301,7 +129,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body text-center">
-          <img src="/assets/images/requests/img/colorpalete.png" alt="Paleta de colores" class="img-fluid rounded-3" />
+          <!-- Imagen dinámica -->
+          <img id="pedido-paleta" src="" alt="Paleta de colores" class="img-fluid rounded-3" />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -310,89 +139,79 @@
     </div>
   </div>
 
-  <!-- JS -->
-  <script src="assets/js/swiper-bundle.min.js"></script>
-  <script src="assets/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+      const estados = ["Recibida","Anticipo recibido","En produccion","Finalizada","Entregada"];
 
-  <script>
-const estados = ['Recibida','Anticipo recibido','En producción','Finalizada','Entregada'];
+      const fmtMoney = (n) => typeof n === "number" ? n.toLocaleString("es-MX",{style:"currency",currency:"MXN"}) : n;
 
-const fmtMoney = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX', { style:'currency', currency:'MXN' }) : n);
-const statusToClass = (s) => {
-  if (s === 'En producción') return 'bg-status-produccion';
-  if (s === 'Entregado') return 'bg-status-entregado';
-  if (s === 'Pendiente') return 'bg-status-pendiente';
-  return 'bg-secondary text-white';
-};
+      const params = new URLSearchParams(window.location.search);
+      const pedidoId = params.get("id");
+      const container = document.querySelector(".pedido-container");
 
-const params = new URLSearchParams(window.location.search);
-const pedidoId = params.get('id');
-const container = document.querySelector('.pedido-container');
+      if (!pedidoId) {
+        container.innerHTML = '<h3 class="text-center text-danger">ID de pedido no proporcionado</h3>';
+      } else {
+        fetch(`getOrder.php?id=${pedidoId}`)
+        .then(res => res.json())
+        .then(pedido => {
+          if(pedido.error){
+            container.innerHTML = `<h3 class="text-center text-danger">${pedido.error}</h3>`;
+            return;
+          }
 
-if (!pedidoId) {
-  container.innerHTML = '<h3 class="text-center text-danger">ID de pedido no proporcionado</h3>';
-} else {
-  fetch(`getOrder.php?id=${pedidoId}`)
-    .then(res => res.json())
-    .then(pedido => {
-      if (pedido.error) {
-        container.innerHTML = `<h3 class="text-center text-danger">${pedido.error}</h3>`;
-        return;
+          document.getElementById("pedido-nombre").textContent = pedido.nombre;
+          document.getElementById("pedido-fecha-inicio").textContent = pedido.fechaInicio;
+          document.getElementById("pedido-fecha-entrega").textContent = pedido.fechaEntrega;
+
+          const paletaImg = document.getElementById("pedido-paleta");
+          if (pedido.paletaColor) {
+            paletaImg.src = pedido.paletaColor;
+            paletaImg.style.display = "block";
+          } else {
+            paletaImg.style.display = "none"; // Si no hay paleta, se oculta
+          }
+
+          document.querySelectorAll(".timeline-item").forEach((item,index)=>{
+            const estadoActualIndex = estados.indexOf(pedido.status);
+            if(index <= estadoActualIndex) item.classList.add("completed");
+          });
+
+          const restante = Math.max(0,(pedido.costo||0)-(pedido.anticipo||0));
+          document.getElementById("pedido-costo").textContent = fmtMoney(pedido.costo||0);
+          document.getElementById("pedido-anticipo").textContent = fmtMoney(pedido.anticipo||0);
+          document.getElementById("pedido-restante").textContent = fmtMoney(restante);
+          const pct = pedido.costo ? Math.min(100,Math.round((pedido.anticipo/pedido.costo)*100)) : 0;
+          document.getElementById("barra-pago").style.width = pct+"%";
+
+          const tbody = document.getElementById("pedido-tallas");
+          tbody.innerHTML = "";
+          (pedido.tallas||[]).forEach(t => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${t.talla}</td><td>${t.cantidad}</td><td><span class="color-chip" style="background:${t.color}"></span></td>`;
+            tbody.appendChild(tr);
+          });
+
+          const wrap = document.getElementById("pedido-imagenes");
+          wrap.innerHTML = "";
+          (pedido.imagenes||[]).forEach(src=>{
+            const slide = document.createElement("div");
+            slide.className="swiper-slide";
+            slide.innerHTML=`<img src="${src}" alt="Imagen del pedido">`;
+            wrap.appendChild(slide);
+          });
+
+          new Swiper(".mySwiper",{
+            loop:true,
+            pagination:{el:".swiper-pagination",clickable:true},
+            navigation:{nextEl:".swiper-button-next",prevEl:".swiper-button-prev"}
+          });
+        })
+        .catch(err=>{
+          container.innerHTML='<h3 class="text-center text-danger">Error cargando pedido</h3>';
+          console.error(err);
+        });
       }
-
-      document.getElementById('pedido-nombre').textContent = pedido.nombre;
-      const statusEl = document.getElementById('pedido-status');
-      statusEl.textContent = pedido.status;
-      statusEl.className = 'badge badge-pill ' + statusToClass(pedido.status);
-      document.getElementById('pedido-fecha-inicio').textContent = pedido.fechaInicio;
-      document.getElementById('pedido-fecha-entrega').textContent = pedido.fechaEntrega;
-
-      document.querySelectorAll('.timeline-item').forEach((item, index) => {
-        const estadoActualIndex = estados.indexOf(pedido.status);
-        if(index <= estadoActualIndex){
-          item.classList.add('completed');
-        }
-      });
-
-      const restante = Math.max(0, (pedido.costo || 0) - (pedido.anticipo || 0));
-      document.getElementById('pedido-costo').textContent = fmtMoney(pedido.costo || 0);
-      document.getElementById('pedido-anticipo').textContent = fmtMoney(pedido.anticipo || 0);
-      document.getElementById('pedido-restante').textContent = fmtMoney(restante);
-      const pct = pedido.costo ? Math.min(100, Math.round((pedido.anticipo / pedido.costo) * 100)) : 0;
-      const barra = document.getElementById('barra-pago');
-      barra.style.width = pct + '%';
-      barra.setAttribute('aria-valuenow', pct);
-
-      const tbody = document.getElementById('pedido-tallas');
-      tbody.innerHTML = '';
-      (pedido.tallas || []).forEach(t => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.talla}</td><td>${t.cantidad}</td><td><span class="color-chip" style="background:${t.color}"></span></td>`;
-        tbody.appendChild(tr);
-      });
-
-      const wrap = document.getElementById('pedido-imagenes');
-      wrap.innerHTML = '';
-      (pedido.imagenes || []).forEach(src => {
-        const slide = document.createElement('div');
-        slide.className = 'swiper-slide';
-        slide.innerHTML = `<img src="${src}" alt="Imagen del pedido">`;
-        wrap.appendChild(slide);
-      });
-
-      new Swiper('.mySwiper', {
-        loop: true,
-        pagination: { el: '.swiper-pagination', clickable: true },
-        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-      });
-
-    })
-    .catch(err => {
-      container.innerHTML = '<h3 class="text-center text-danger">Error cargando pedido</h3>';
-      console.error(err);
-    });
-}
-</script>
-
-</body>
+    </script>
+  </body>
 </html>

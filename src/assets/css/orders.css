@@ -1,0 +1,214 @@
+body {
+  background: #f7f7f9;
+  color: #1f2937;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.pedido-container {
+  max-width: 1080px;
+  margin: 48px auto;
+  padding: 28px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.pedido-header h2 {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.pedido-subtitle {
+  color: #6b7280;
+}
+
+.swiper {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 16px;
+  margin-bottom: 40px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.swiper-slide img {
+  max-width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  display: block;
+}
+
+.card-soft {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.badge-pill {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.meta {
+  color: #6b7280;
+}
+
+.table thead th {
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.table tbody tr {
+  vertical-align: middle;
+}
+
+.color-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1px solid #e5e7eb;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.btn-palette {
+  border-radius: 10px;
+}
+
+.progress {
+  height: 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+}
+
+.progress-bar {
+  border-radius: 999px;
+}
+
+.divider {
+  height: 1px;
+  background: #eef2f7;
+  margin: 10px 0 6px;
+}
+
+/* --- INICIO DE MODIFICACIONES PARA TIMELINE --- */
+.pedido-timeline {
+  margin-bottom: 40px;
+  /* Añadido para dar espacio extra si la línea del tiempo tiene altura */
+  padding-top: 20px;
+  /* Empuja los elementos hacia abajo para la línea */
+}
+
+.timeline-list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  display: flex; /* Asegura que los ítems se distribuyan */
+  justify-content: space-between; /* Distribuye los ítems uniformemente */
+}
+
+.timeline-list::before {
+  content: "";
+  position: absolute;
+  top: 32px;
+  /* Ajusta esta posición para que la línea pase por el centro vertical de los círculos */
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  /* Color gris de la línea por defecto */
+  z-index: 0;
+}
+
+.timeline-item {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  /* Cada ítem ocupa el mismo espacio */
+  text-align: center;
+  /* Centra el texto y el círculo dentro de cada ítem */
+}
+
+.timeline-circle {
+  width: 48px;
+  /* Aumentado ligeramente para que los iconos no se vean apretados */
+  height: 48px;
+  /* Aumentado ligeramente */
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  /* Gris por defecto */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 10px auto;
+  /* Centrar el círculo y darle un margen inferior */
+  transition: all 0.3s ease;
+  border: 2px solid #ccc;
+  /* Borde gris por defecto para que se vea más definido */
+}
+
+.timeline-circle i {
+  font-size: 24px;
+  /* Tamaño del icono ligeramente más grande */
+  color: #6c757d;
+  /* Color gris oscuro por defecto del icono */
+  transition: all 0.3s ease;
+}
+
+/* ESTILOS PARA EL ESTADO COMPLETED */
+.timeline-item.completed .timeline-circle {
+  background-color: var(--bs-primary, #0d6efd);
+  /* Azul de Bootstrap por defecto o tu variable */
+  border-color: var(--bs-primary, #0d6efd);
+  /* Borde azul también */
+}
+
+.timeline-item.completed .timeline-circle i {
+  color: #fff;
+  /* Icono blanco cuando está completado */
+}
+
+.timeline-label {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  /* Color por defecto del label */
+}
+
+.timeline-item.completed .timeline-label {
+  font-weight: 600;
+  /* Etiqueta en negrita cuando está completado */
+  color: #1f2937;
+  /* Color más oscuro para el label completado */
+}
+
+/* Opcional: Estilo para la línea de progreso */
+/* Para que la línea se "complete", necesitarías JavaScript para
+   calcular el ancho de la porción azul de la línea y aplicarla */
+/* Por ahora, la línea siempre será gris */
+
+/* --- FIN DE MODIFICACIONES PARA TIMELINE --- */
+
+.row.g-4 {
+  margin-top: 20px;
+}
