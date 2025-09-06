@@ -1197,7 +1197,7 @@ const button = document.getElementById('buscarBtn');
 button.addEventListener('click', () => {
     const pedido = input.value.trim();
     if(pedido) {
-        window.location.href = `/orders.html?id=${encodeURIComponent(pedido)}`;
+        window.location.href = `/getOrderDetails.html?id=${encodeURIComponent(pedido)}`;
     } else {
         alert('Por favor ingresa un número de pedido');
     }

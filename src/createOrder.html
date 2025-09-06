@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crear/Editar Pedido</title>
+    <title>Gestionar Pedido</title>
 
     <!-- Tus enlaces CSS existentes -->
     <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
@@ -35,7 +35,7 @@
         .section-title {
             font-size: 1.05rem;
             font-weight: 600;
-            margin-bottom: 15px; /* Aumentado ligeramente para los títulos de sección */
+            margin-bottom: 15px;
             color: #111827;
         }
         .form-label {
@@ -54,10 +54,67 @@
             margin-bottom: 0;
         }
         .talla-entry .form-control {
-            flex-grow: 1; /* Para que ocupen el espacio disponible */
+            flex-grow: 1;
         }
         .talla-entry .btn-danger {
-            flex-shrink: 0; /* Para que el botón no se encoja */
+            flex-shrink: 0;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .image-preview {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-preview .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .alert-message {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
     </style>
   </head>
@@ -67,11 +124,23 @@
 
     <div class="pedido-container">
         <div class="pedido-header text-center mb-5">
-            <h2>Gestionar Pedido</h2>
-            <p class="pedido-subtitle">Crea o edita los detalles de un pedido.</p>
+            <h2 id="formTitle">Gestionar Pedido</h2>
+            <p class="pedido-subtitle" id="formSubtitle">Crea un nuevo pedido o busca uno existente para editar.</p>
+        </div>
+
+        <div class="card-soft mb-4 p-4">
+            <div class="section-title text-center mb-4">Buscar Pedido Existente</div>
+            <div class="input-group mb-3">
+                <input type="number" class="form-control" placeholder="ID del Pedido" aria-label="ID del Pedido" id="searchOrderIdInput">
+                <button class="btn btn-outline-secondary" type="button" id="searchOrderButton"><i class="bx bx-search"></i> Buscar</button>
+                <button class="btn btn-outline-info" type="button" id="newOrderButton"><i class="bx bx-plus"></i> Nuevo Pedido</button>
+            </div>
+            <div id="alertMessage" class="alert-message d-none"></div>
         </div>
 
         <form id="pedidoForm" action="createOrder.php" method="POST" enctype="multipart/form-data">
+            <!-- Campo oculto para el ID del pedido (solo para edición) -->
+            <input type="hidden" id="pedidoId" name="pedido_id">
             
             <div class="card-soft mb-4 p-4">
                 <div class="section-title text-center mb-4">Información General</div>
@@ -120,13 +189,7 @@
                 </div>
                 
                 <div id="tallasContainer">
-                    <!-- Campo inicial de talla -->
-                    <div class="talla-entry d-flex align-items-center gap-2">
-                        <input type="text" class="form-control" name="talla[]" placeholder="Talla (Ej: S, M, L)">
-                        <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="1" min="1">
-                        <input type="color" class="form-control form-control-color" name="color[]" value="#563d7c" title="Elige tu color">
-                        <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
-                    </div>
+                    <!-- Campo inicial de talla - Se cargará dinámicamente o se mantendrá uno vacío -->
                 </div>
             </div> <!-- End card-soft Tallas y Colores -->
 
@@ -136,18 +199,24 @@
                 <div class="mb-4">
                     <label for="imagenes" class="form-label">Subir Imágenes del Diseño (múltiples)</label>
                     <input type="file" class="form-control" id="imagenes" name="imagenes[]" multiple accept="image/*">
-                    <small class="form-text text-muted">Sube una o más imágenes relacionadas con el diseño del pedido.</small>
+                    <small class="form-text text-muted">Sube una o más imágenes relacionadas con el diseño del pedido. Las nuevas imágenes reemplazarán las existentes.</small>
+                    <div id="imagenesPreview" class="image-preview-container">
+                        <!-- Las imágenes existentes se cargarán aquí -->
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="paletaColor" class="form-label">Subir Imagen de Paleta de Colores (una)</label>
                     <input type="file" class="form-control" id="paletaColor" name="paletaColor" accept="image/*">
-                    <small class="form-text text-muted">Sube una única imagen que represente la paleta de colores del pedido.</small>
+                    <small class="form-text text-muted">Sube una única imagen que represente la paleta de colores del pedido. La nueva imagen reemplazará la existente.</small>
+                    <div id="paletaColorPreview" class="image-preview-container">
+                        <!-- La imagen de paleta existente se cargará aquí -->
+                    </div>
                 </div>
             </div> <!-- End card-soft Imágenes -->
 
             <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-primary btn-lg">Guardar Pedido</button>
+                <button type="submit" id="submitButton" class="btn btn-primary btn-lg">Guardar Pedido</button>
             </div>
         </form>
     </div>
@@ -157,18 +226,77 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Script para añadir/eliminar campos de talla
             const tallasContainer = document.getElementById('tallasContainer');
-            document.getElementById('addTalla').addEventListener('click', function() {
+            const pedidoIdField = document.getElementById('pedidoId');
+            const formTitle = document.getElementById('formTitle');
+            const formSubtitle = document.getElementById('formSubtitle');
+            const submitButton = document.getElementById('submitButton');
+            const imagenesPreview = document.getElementById('imagenesPreview');
+            const paletaColorPreview = document.getElementById('paletaColorPreview');
+            const searchOrderIdInput = document.getElementById('searchOrderIdInput');
+            const searchOrderButton = document.getElementById('searchOrderButton');
+            const newOrderButton = document.getElementById('newOrderButton');
+            const alertMessage = document.getElementById('alertMessage');
+            const pedidoForm = document.getElementById('pedidoForm');
+
+            // Función para añadir un campo de talla
+            function addTallaEntry(talla = '', cantidad = 1, color = '#563d7c') {
                 const newTallaEntry = document.createElement('div');
                 newTallaEntry.className = 'talla-entry d-flex align-items-center gap-2';
                 newTallaEntry.innerHTML = `
-                    <input type="text" class="form-control" name="talla[]" placeholder="Talla (Ej: S, M, L)">
-                    <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="1" min="1">
-                    <input type="color" class="form-control form-control-color" name="color[]" value="#563d7c" title="Elige tu color">
+                    <input type="text" class="form-control" name="talla[]" placeholder="Talla (Ej: S, M, L)" value="${talla}">
+                    <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="${cantidad}" min="1">
+                    <input type="color" class="form-control form-control-color" name="color[]" value="${color}" title="Elige tu color">
                     <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
                 `;
                 tallasContainer.appendChild(newTallaEntry);
+            }
+
+            // Función para mostrar una alerta
+            function showAlert(message, type = 'info') {
+                alertMessage.textContent = message;
+                alertMessage.className = `alert-message alert-${type}`;
+                alertMessage.classList.remove('d-none');
+            }
+
+            // Función para ocultar la alerta
+            function hideAlert() {
+                alertMessage.classList.add('d-none');
+            }
+
+            // Función para limpiar el formulario y ponerlo en modo "nuevo pedido"
+            function resetForm() {
+                pedidoIdField.value = '';
+                pedidoForm.reset(); // Resetea todos los campos del formulario
+                tallasContainer.innerHTML = ''; // Limpiar tallas
+                addTallaEntry(); // Añadir un campo de talla por defecto
+                imagenesPreview.innerHTML = ''; // Limpiar imágenes previas
+                paletaColorPreview.innerHTML = ''; // Limpiar paleta previa
+
+                formTitle.textContent = 'Crear Nuevo Pedido';
+                formSubtitle.textContent = 'Introduce los detalles para un nuevo pedido.';
+                submitButton.textContent = 'Guardar Nuevo Pedido';
+
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('fechaInicio').value = today;
+                hideAlert(); // Ocultar cualquier alerta previa
+                searchOrderIdInput.value = ''; // Limpiar el campo de búsqueda
+            }
+
+            // Función para mostrar vistas previas de imágenes
+            function displayImagePreview(container, filePath) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview';
+                previewDiv.innerHTML = `<img src="${filePath}" alt="Imagen previa">`;
+                container.appendChild(previewDiv);
+            }
+
+            // Lógica al iniciar la página
+            resetForm(); // Inicialmente en modo creación
+
+            // Evento para añadir/eliminar campos de talla
+            document.getElementById('addTalla').addEventListener('click', function() {
+                addTallaEntry();
             });
 
             tallasContainer.addEventListener('click', function(e) {
@@ -177,15 +305,82 @@
                     if (tallasContainer.children.length > 1) { // No permitir eliminar el último campo
                         button.closest('.talla-entry').remove();
                     } else {
-                        alert('Debe haber al menos una talla.');
+                        showAlert('Debe haber al menos una talla.', 'info');
                     }
                 }
             });
 
-            // Opcional: Establecer la fecha actual por defecto en los campos de fecha
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaInicio').value = today;
-            // document.getElementById('fechaEntrega').value = today; // Puedes ajustar para una fecha futura
+            // Evento para el botón de búsqueda
+            searchOrderButton.addEventListener('click', function() {
+                const pedidoId = searchOrderIdInput.value.trim();
+                if (!pedidoId) {
+                    showAlert('Por favor, introduce un ID de pedido para buscar.', 'warning');
+                    return;
+                }
+                
+                hideAlert(); // Ocultar alerta anterior
+
+
+                // Cargar los datos del pedido
+                fetch(`getOrderDetails.php?id=${pedidoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Respuesta del servidor:", data);
+                        if (data.success) {
+                            const pedido = data.pedido;
+
+                            pedidoIdField.value = pedido.id;
+                            document.getElementById('nombre').value = pedido.nombre;
+                            document.getElementById('status').value = pedido.status;
+                            document.getElementById('fechaInicio').value = pedido.fechaInicio;
+                            document.getElementById('fechaEntrega').value = pedido.fechaEntrega;
+                            document.getElementById('costo').value = pedido.costo;
+                            document.getElementById('anticipo').value = pedido.anticipo;
+
+                            // Cargar tallas
+                            tallasContainer.innerHTML = '';
+                            const tallas = pedido.tallas || [];
+                            if (tallas.length > 0) {
+                                tallas.forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
+                            } else {
+                                addTallaEntry();
+                            }
+
+                            // Cargar imágenes del pedido
+                            imagenesPreview.innerHTML = '';
+                            const imagenes = pedido.imagenes || [];
+                            imagenes.forEach(img => displayImagePreview(imagenesPreview, img));
+
+
+
+                            // Cargar imagen de paleta de colores
+                            paletaColorPreview.innerHTML = '';
+                            if (pedido.paletaColor) {
+                                displayImagePreview(paletaColorPreview, pedido.paletaColor);
+                            }
+
+                            formTitle.textContent = `Editar Pedido #${pedido.id}`;
+                            formSubtitle.textContent = 'Edita los detalles de este pedido existente.';
+                            submitButton.textContent = 'Actualizar Pedido';
+                            showAlert(`Pedido #${pedido.id} cargado exitosamente para edición.`, 'success');
+
+                        } else {
+                            resetForm(); // Limpiar el formulario y ponerlo en modo creación
+                            showAlert('Pedido no encontrado. Puedes crear uno nuevo o buscar otro ID.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching order details:', error);
+                        resetForm(); // Limpiar el formulario en caso de error
+                        showAlert('Ocurrió un error al cargar los datos del pedido. Inténtalo de nuevo.', 'danger');
+                    });
+            });
+
+            // Evento para el botón "Nuevo Pedido"
+            newOrderButton.addEventListener('click', function() {
+                resetForm();
+                showAlert('Formulario listo para crear un nuevo pedido.', 'info');
+            });
         });
     </script>
   </body>

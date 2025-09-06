@@ -35,6 +35,14 @@
         <div class="swiper-pagination"></div>
       </div>
 
+      <!-- Nuevo div para el botón "Ver paleta de colores" -->
+      <div class="d-flex justify-content-center mt-3 mb-4"> 
+        <button class="btn btn-primary btn-sm btn-palette" data-bs-toggle="modal" data-bs-target="#modalPaleta">
+          <i class="bx bx-palette me-1"></i> Ver paleta de colores
+        </button>
+      </div>
+      <!-- Fin del nuevo div -->
+
       <div class="pedido-timeline mt-4">
         <ul class="timeline-list d-flex justify-content-between list-unstyled px-0 mb-0">
           <li class="timeline-item text-center">
@@ -100,9 +108,7 @@
           <div class="card-soft">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
               <div class="section-title mb-0">Tallas y Colores</div>
-              <button class="btn btn-primary btn-sm btn-palette" data-bs-toggle="modal" data-bs-target="#modalPaleta">
-                <i class="bx bx-palette me-1"></i> Ver paleta de colores
-              </button>
+              <!-- El botón se ha movido, así que lo eliminamos de aquí -->
             </div>
             <div class="table-responsive mt-3">
               <table class="table table-hover align-middle mb-0">
@@ -152,13 +158,15 @@
       if (!pedidoId) {
         container.innerHTML = '<h3 class="text-center text-danger">ID de pedido no proporcionado</h3>';
       } else {
-        fetch(`getOrder.php?id=${pedidoId}`)
+        fetch(`getOrderDetails.php?id=${pedidoId}`)
         .then(res => res.json())
-        .then(pedido => {
-          if(pedido.error){
-            container.innerHTML = `<h3 class="text-center text-danger">${pedido.error}</h3>`;
+        .then(data => {
+          if(!data.success || !data.pedido){
+            container.innerHTML = `<h3 class="text-center text-danger">No se encontró el pedido</h3>`;
             return;
           }
+
+          const pedido = data.pedido;
 
           document.getElementById("pedido-nombre").textContent = pedido.nombre;
           document.getElementById("pedido-fecha-inicio").textContent = pedido.fechaInicio;
