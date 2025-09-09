@@ -1,0 +1,4 @@
+docker exec -it php-apache bash
+ls -la /var/www/html
+
+docker-compose restart web
