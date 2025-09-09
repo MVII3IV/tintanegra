@@ -1,8 +1,15 @@
 RewriteEngine On
 
-# Quitar .php
+# --- Archivos dentro de /php ---
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^php/(.+)$ php/$1.php [L]
+
+# --- Archivos PHP en la raíz u otras carpetas ---
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^([^/]+)$ $1.php [L]
+RewriteRule ^(.+)$ $1.php [L]
 
 # Quitar .html (si quieres)
 RewriteCond %{REQUEST_FILENAME}.html -f

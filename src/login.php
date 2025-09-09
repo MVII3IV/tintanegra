@@ -1,7 +1,7 @@
 <?php
 // login.php
 session_start();
-require_once 'config.php'; // Incluye el archivo de configuración de la base de datos
+require_once 'php/config.php'; // Incluye el archivo de configuración de la base de datos
 
 $username = $password = "";
 $username_err = $password_err = $login_err = "";
@@ -56,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             $_SESSION["username"] = $username;
 
                             // Redirigir al usuario a la página de bienvenida (o createorder.php)
-                            header("location: createorderDetail.php");
+                            header("location: admin");
                             exit(); // Importante para detener la ejecución después de la redirección
                         } else {
                             // La contraseña no es válida, mostrar un mensaje de error genérico
@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: gray;
             display: flex;
             justify-content: center;
             align-items: center;

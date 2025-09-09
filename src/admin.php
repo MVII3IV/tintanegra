@@ -1,10 +1,10 @@
 <?php
 session_start(); 
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: login.php");
+    header("location: php/login.php");
     exit;
 }
-require_once 'config.php'; 
+require_once 'php/config.php'; 
 ?>
 
 <!DOCTYPE html>
@@ -33,6 +33,9 @@ require_once 'config.php';
     #resultados table {
         width: 100%;
         border-collapse: collapse;
+    }
+    body{
+        background-color: gray;
     }
     #resultados th, #resultados td {
         padding: 8px 12px;
@@ -66,7 +69,7 @@ require_once 'config.php';
         <div id="resultados" class="mt-3"></div>
     </div>
 
-    <form id="pedidoForm" action="createOrder.php" method="POST" enctype="multipart/form-data">
+    <form id="pedidoForm" action="php/createOrder.php" method="POST" enctype="multipart/form-data">
         <input type="hidden" id="pedidoId" name="pedido_id">
 
         <div class="card-soft mb-4 p-4">
@@ -200,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const resultadosDiv = document.getElementById('resultados');
         resultadosDiv.innerHTML = 'Buscando...';
 
-        fetch('getOrderByName.php?nombre=' + encodeURIComponent(nombre))
+        fetch('php/getOrderByName.php?nombre=' + encodeURIComponent(nombre))
             .then(res => res.json())
             .then(data => {
                 resultadosDiv.innerHTML = '';
@@ -251,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('resultados').addEventListener('click', function(e){
         if(e.target.closest('.edit-btn')) {
             const id = e.target.closest('.edit-btn').dataset.id;
-            fetch(`getOrderById.php?id=${id}`)
+            fetch(`php/getOrderById?id=${id}`)
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) {

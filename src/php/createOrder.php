@@ -125,7 +125,7 @@ try {
             ':id'           => $pedidoId
         ]);
 
-        header("Location: showOrder.html?id=$pedidoId&updated=true");
+        header("Location: showOrder?id=$pedidoId&updated=true");
         exit;
 
     } else {
@@ -150,7 +150,7 @@ try {
         ]);
 
         // Ya no necesitas lastInsertId() porque generamos el ID
-        header("Location: showOrder.html?id=$newPedidoId&created=true");
+        header("Location: showOrder?id=$newPedidoId&created=true");
         exit;
     }
 
