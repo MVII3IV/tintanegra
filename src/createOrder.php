@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'id-generator.php'; // Incluye el nuevo generador de ID
 
 // Directorios de subida
 $uploadDir = 'uploads/';
@@ -34,7 +35,7 @@ if ($pedidoId) {
 $tallas = [];
 if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     foreach ($_POST['talla'] as $i => $t) {
-        if (!empty($t)) { 
+        if (!empty($t)) {
             $tallas[] = [
                 'talla'    => htmlspecialchars($t),
                 'cantidad' => (int)$_POST['cantidad'][$i],
@@ -99,15 +100,15 @@ if (!$newPaletaColorUploaded && $pedidoId) {
 try {
     if ($pedidoId) {
         // Modo edición: UPDATE
-        $stmt = $pdo->prepare("UPDATE pedidos SET 
-            nombre = :nombre, 
-            status = :status, 
-            fechaInicio = :fechaInicio, 
-            fechaEntrega = :fechaEntrega, 
-            costo = :costo, 
-            anticipo = :anticipo, 
-            tallas = :tallas, 
-            imagenes = :imagenes, 
+        $stmt = $pdo->prepare("UPDATE pedidos SET
+            nombre = :nombre,
+            status = :status,
+            fechaInicio = :fechaInicio,
+            fechaEntrega = :fechaEntrega,
+            costo = :costo,
+            anticipo = :anticipo,
+            tallas = :tallas,
+            imagenes = :imagenes,
             paletaColor = :paletaColor
             WHERE id = :id");
 
@@ -124,16 +125,19 @@ try {
             ':id'           => $pedidoId
         ]);
 
-        header("Location: getOrderDetails.html?id=$pedidoId&updated=true");
+        header("Location: showOrder.html?id=$pedidoId&updated=true");
         exit;
 
     } else {
         // Modo creación: INSERT
-        $stmt = $pdo->prepare("INSERT INTO pedidos 
-            (nombre, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, imagenes, paletaColor)
-            VALUES (:nombre, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :imagenes, :paletaColor)");
+        $newPedidoId = generateFunnyOrderId(); // Genera el nuevo ID único
+
+        $stmt = $pdo->prepare("INSERT INTO pedidos
+            (id, nombre, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, imagenes, paletaColor)
+            VALUES (:id, :nombre, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :imagenes, :paletaColor)");
 
         $stmt->execute([
+            ':id'           => $newPedidoId, // Usa el nuevo ID
             ':nombre'       => htmlspecialchars($_POST['nombre']),
             ':status'       => htmlspecialchars($_POST['status']),
             ':fechaInicio'  => $_POST['fechaInicio'],
@@ -145,9 +149,8 @@ try {
             ':paletaColor'  => $paletaColorPath
         ]);
 
-        $id = $pdo->lastInsertId();
-
-        header("Location: getOrderDetails?id=$id&created=true");
+        // Ya no necesitas lastInsertId() porque generamos el ID
+        header("Location: showOrder.html?id=$newPedidoId&created=true");
         exit;
     }
 
