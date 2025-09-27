@@ -1,0 +1,3 @@
+/ - main
+/admin - admin and orders modification
+/showOrder?{id} - display an order
