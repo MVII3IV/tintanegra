@@ -1,7 +1,7 @@
 <?php
 session_start(); 
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: php/login.php");
+    header("location: login.php");
     exit;
 }
 require_once 'php/config.php'; 
@@ -10,68 +10,51 @@ require_once 'php/config.php';
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gestión de Pedidos - Panel Local</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Pedidos - Panel Administrativo</title>
 
-<link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
-<link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
-<link rel="stylesheet" href="assets/css/scrollCue.css" />
-<link rel="stylesheet" href="assets/css/boxicons.min.css" />
-<link rel="stylesheet" href="assets/fonts/flaticon_pozu.css" />
-<link rel="stylesheet" href="assets/css/navbar.css" />
-<link rel="stylesheet" href="assets/css/footer.css" />
-<link rel="stylesheet" href="assets/css/style.css" />
-<link rel="stylesheet" href="assets/css/responsive.css" />
-<link rel="stylesheet" href="assets/css/rtl.css" />
-<link rel="stylesheet" href="assets/css/orders.css" /> 
+    <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="assets/css/boxicons.min.css" />
+    <link rel="stylesheet" href="assets/css/footer.css" />
+    <link rel="stylesheet" href="assets/css/navbar.css" />
+    <link rel="stylesheet" href="assets/css/orders.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/rtl.css" />
+    <link rel="stylesheet" href="assets/css/scrollCue.css" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
 
-<script src="assets/js/swiper-bundle.min.js"></script>
-<script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
 
-<style>
-    body { background-color: gray; } /* Mantengo tu color de fondo original */
-    
-    #resultados table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: white;
-    }
-    #resultados th, #resultados td {
-        padding: 12px;
-        border: 1px solid #dee2e6;
-        text-align: center;
-    }
-    #resultados th {
-        background-color: #f8f9fa;
-        font-weight: bold;
-    }
-    .image-preview-container {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-    .image-preview img {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 4px;
-    }
-</style>
+    <style>
+        /* Estilos adicionales para la funcionalidad de administración */
+        body { background-color: #f4f4f4; }
+        .image-preview-container { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; background: #fff; min-height: 50px; }
+        .image-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        .table-responsive { background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .section-title-admin { font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
+        .action-btns { display: flex; gap: 5px; justify-content: center; }
+    </style>
 </head>
 <body>
 
-<div class="pedido-container">
+<div class="container mt-5">
     <div class="pedido-header text-center mb-5">
-        <h2 id="formTitle">Gestionar Pedido</h2>
-        <p class="pedido-subtitle" id="formSubtitle">Crea un nuevo pedido o selecciona uno de la lista para editar.</p>
+        <h2 id="formTitle">Panel de Gestión de Pedidos</h2>
+        <p class="pedido-subtitle" id="formSubtitle">Busca, edita o elimina órdenes de trabajo.</p>
     </div>
 
-    <div class="card-soft mb-4 p-4">
-        <div class="section-title text-center mb-4">Pedidos en Sistema</div>
-        
-        <div id="resultados" class="mt-3 table-responsive">
+    <div class="card mb-4 p-4 shadow-sm border-0">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-0">Registros en Base de Datos</h5>
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="buscadorNombre" class="form-control" placeholder="Buscar por nombre de cliente...">
+            </div>
+        </div>
+        <div id="resultados" class="table-responsive">
             <p class="text-center">Cargando pedidos...</p>
         </div>
     </div>
@@ -79,16 +62,16 @@ require_once 'php/config.php';
     <form id="pedidoForm" action="php/createOrder.php" method="POST" enctype="multipart/form-data">
         <input type="hidden" id="pedidoId" name="pedido_id">
 
-        <div class="card-soft mb-4 p-4">
-            <div class="section-title text-center mb-4">Información General</div>
+        <div class="card mb-4 p-4 shadow-sm border-0">
+            <div class="section-title-admin text-center">Datos Generales</div>
             <div class="mb-3">
-                <label for="nombrePedido" class="form-label">Nombre del Pedido</label>
+                <label for="nombrePedido" class="form-label">Nombre del Pedido / Cliente</label>
                 <input type="text" class="form-control" id="nombrePedido" name="nombre" required>
             </div>
 
             <div class="row g-3">
                 <div class="col-md-4 mb-3">
-                    <label for="status" class="form-label">Estado</label>
+                    <label for="status" class="form-label">Estado del Pedido</label>
                     <select class="form-select" id="status" name="status" required>
                         <option value="Recibida">Recibida</option>
                         <option value="Anticipo recibido">Anticipo Recibido</option>
@@ -98,56 +81,54 @@ require_once 'php/config.php';
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
+                    <label for="fechaInicio" class="form-label">Fecha Inicio</label>
                     <input type="date" class="form-control" id="fechaInicio" name="fechaInicio" required>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="fechaEntrega" class="form-label">Fecha Estimada de Entrega</label>
+                    <label for="fechaEntrega" class="form-label">Fecha Entrega</label>
                     <input type="date" class="form-control" id="fechaEntrega" name="fechaEntrega" required>
                 </div>
             </div>
 
             <div class="row g-3">
                 <div class="col-md-6 mb-3">
-                    <label for="costo" class="form-label">Costo Total</label>
+                    <label for="costo" class="form-label">Costo Total ($)</label>
                     <input type="number" step="0.01" class="form-control" id="costo" name="costo" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="anticipo" class="form-label">Anticipo Recibido</label>
+                    <label for="anticipo" class="form-label">Anticipo Recibido ($)</label>
                     <input type="number" step="0.01" class="form-control" id="anticipo" name="anticipo" value="0.00">
                 </div>
             </div>
         </div> 
 
-        <div class="card-soft mb-4 p-4">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
-                <div class="section-title mb-0">Tallas y Colores</div>
-                <button type="button" id="addTalla" class="btn btn-outline-primary btn-sm">
-                    <i class="bx bx-plus me-1"></i> Añadir Talla
-                </button>
+        <div class="card mb-4 p-4 shadow-sm border-0">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="mb-0">Configuración de Tallas</h5>
+                <button type="button" id="addTalla" class="btn btn-primary btn-sm"><i class="bx bx-plus"></i> Añadir Talla</button>
             </div>
             <div id="tallasContainer"></div>
         </div> 
 
-        <div class="card-soft mb-4 p-4">
-            <div class="section-title text-center mb-4">Imágenes del Pedido y Paleta</div>
-
-            <div class="mb-4">
-                <label for="imagenes" class="form-label">Subir Imágenes del Diseño (múltiples)</label>
-                <input type="file" class="form-control" id="imagenes" name="imagenes[]" multiple accept="image/*">
-                <div id="imagenesPreview" class="image-preview-container"></div>
-            </div>
-
-            <div class="mb-3">
-                <label for="paletaColor" class="form-label">Subir Imagen de Paleta de Colores (una)</label>
-                <input type="file" class="form-control" id="paletaColor" name="paletaColor" accept="image/*">
-                <div id="paletaColorPreview" class="image-preview-container"></div>
+        <div class="card mb-4 p-4 shadow-sm border-0">
+            <div class="section-title-admin text-center">Evidencia Visual y Colores</div>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label class="form-label">Imágenes del Diseño</label>
+                    <input type="file" class="form-control mb-2" id="imagenes" name="imagenes[]" multiple accept="image/*">
+                    <div id="imagenesPreview" class="image-preview-container"></div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <label class="form-label">Paleta de Colores</label>
+                    <input type="file" class="form-control mb-2" id="paletaColor" name="paletaColor" accept="image/*">
+                    <div id="paletaColorPreview" class="image-preview-container"></div>
+                </div>
             </div>
         </div> 
 
-        <div class="d-grid mt-4">
-            <button type="submit" id="submitButton" class="btn btn-primary btn-lg">Guardar Pedido</button>
-            <button type="button" class="btn btn-secondary mt-2" onclick="location.reload()">Nuevo Pedido / Limpiar</button>
+        <div class="d-grid gap-2 mb-5">
+            <button type="submit" id="submitButton" class="btn btn-dark btn-lg">Guardar Información</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">Cancelar / Nuevo Pedido</button>
         </div>
     </form>
 </div>
@@ -156,152 +137,131 @@ require_once 'php/config.php';
 document.addEventListener('DOMContentLoaded', function() {
     const tallasContainer = document.getElementById('tallasContainer');
     const resultadosDiv = document.getElementById('resultados');
+    const buscador = document.getElementById('buscadorNombre');
     const pedidoIdField = document.getElementById('pedidoId');
     const formTitle = document.getElementById('formTitle');
-    const formSubtitle = document.getElementById('formSubtitle');
     const submitButton = document.getElementById('submitButton');
     const imagenesPreview = document.getElementById('imagenesPreview');
     const paletaColorPreview = document.getElementById('paletaColorPreview');
-    const nombrePedidoInput = document.getElementById('nombrePedido');
 
-    // ==========================================
-    // 1. CARGA AUTOMÁTICA DE PEDIDOS
-    // ==========================================
+    // 1. CARGAR PEDIDOS
     function cargarPedidos(nombre = '') {
-        fetch('php/getOrderByName.php?nombre=' + encodeURIComponent(nombre))
+        fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(nombre)}`)
             .then(res => res.json())
             .then(data => {
-                resultadosDiv.innerHTML = '';
                 if (data.success && data.pedidos.length > 0) {
-                    const table = document.createElement('table');
-                    table.innerHTML = `
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Status</th>
-                                <th>Inicio</th>
-                                <th>Entrega</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    `;
+                    let html = `<table class="table table-hover align-middle">
+                        <thead><tr><th>ID</th><th>Cliente</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+                        <tbody>`;
                     data.pedidos.forEach(p => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
+                        html += `<tr>
                             <td>${p.id}</td>
                             <td>${p.nombre}</td>
-                            <td>${p.status}</td>
-                            <td>${p.fechaInicio}</td>
-                            <td>${p.fechaEntrega}</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i> Editar</button>
-                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${p.id}"><i class="bx bx-trash"></i></button>
+                            <td><span class="badge bg-secondary">${p.status}</span></td>
+                            <td class="action-btns text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="${p.id}"><i class="bx bx-trash"></i></button>
                             </td>
-                        `;
-                        table.querySelector('tbody').appendChild(row);
+                        </tr>`;
                     });
-                    resultadosDiv.appendChild(table);
+                    html += `</tbody></table>`;
+                    resultadosDiv.innerHTML = html;
                 } else {
-                    resultadosDiv.innerHTML = '<p class="text-muted">No hay pedidos disponibles.</p>';
+                    resultadosDiv.innerHTML = '<p class="text-center">No se encontraron registros.</p>';
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                resultadosDiv.innerHTML = '<p class="text-danger">Error al cargar la tabla.</p>';
             });
     }
 
-    // Ejecutar al cargar la página
     cargarPedidos();
 
-    // Evento del botón buscar
-    document.getElementById('searchByNameButton').addEventListener('click', function() {
-        const query = document.getElementById('nombreBusqueda').value;
-        cargarPedidos(query);
-    });
+    // Evento buscador
+    buscador.addEventListener('input', (e) => cargarPedidos(e.target.value));
 
-    // ==========================================
-    // 2. LÓGICA DE TALLAS
-    // ==========================================
-    function addTallaEntry(talla = '', cantidad = 1, color = '#563d7c') {
-        const newTallaEntry = document.createElement('div');
-        newTallaEntry.className = 'talla-entry d-flex align-items-center gap-2 mb-2';
-        newTallaEntry.innerHTML = `
+    // 2. TALLAS
+    function addTallaEntry(talla = '', cantidad = 1, color = '#000000') {
+        const div = document.createElement('div');
+        div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
+        div.innerHTML = `
             <input type="text" class="form-control" name="talla[]" placeholder="Talla" value="${talla}">
-            <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="${cantidad}" min="1">
+            <input type="number" class="form-control" name="cantidad[]" value="${cantidad}" min="1" style="width: 80px;">
             <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
-            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
+            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-x"></i></button>
         `;
-        tallasContainer.appendChild(newTallaEntry);
+        tallasContainer.appendChild(div);
     }
-
-    document.getElementById('addTalla').addEventListener('click', (e) => {
-        e.preventDefault();
-        addTallaEntry();
+    document.getElementById('addTalla').addEventListener('click', () => addTallaEntry());
+    tallasContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-talla')) e.target.closest('.talla-entry').remove();
     });
-
-    tallasContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-talla')) {
-            if (tallasContainer.children.length > 1) {
-                e.target.closest('.talla-entry').remove();
-            }
-        }
-    });
-
-    // Iniciar con una fila de talla
     addTallaEntry();
 
-    // ==========================================
-    // 3. EDITAR PEDIDO (CARGAR EN FORMULARIO)
-    // ==========================================
-    resultadosDiv.addEventListener('click', function(e){
-        const editBtn = e.target.closest('.edit-btn');
-        if(editBtn) {
-            const id = editBtn.dataset.id;
-            // IMPORTANTE: Asegúrate de que el archivo sea php/editor.php o php/getOrderDetail.php
-            fetch(`php/editor.php?id=${id}`) 
+    // 3. EDITAR Y ELIMINAR
+    document.addEventListener('click', function(e) {
+        
+        // EDITAR
+        const btnEdit = e.target.closest('.edit-btn');
+        if (btnEdit) {
+            const id = btnEdit.getAttribute('data-id');
+            fetch(`php/editor.php?id=${id}`)
                 .then(res => res.json())
                 .then(data => {
-                    if(data.success) {
+                    if (data.success) {
                         const p = data.pedido;
                         pedidoIdField.value = p.id;
-                        nombrePedidoInput.value = p.nombre;
+                        document.getElementById('nombrePedido').value = p.nombre;
                         document.getElementById('status').value = p.status;
                         document.getElementById('fechaInicio').value = p.fechaInicio;
                         document.getElementById('fechaEntrega').value = p.fechaEntrega;
                         document.getElementById('costo').value = p.costo;
                         document.getElementById('anticipo').value = p.anticipo;
 
-                        // Cargar tallas
                         tallasContainer.innerHTML = '';
-                        if(p.tallas && p.tallas.length > 0) {
+                        if (p.tallas && p.tallas.length > 0) {
                             p.tallas.forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
-                        } else {
-                            addTallaEntry();
-                        }
+                        } else { addTallaEntry(); }
 
-                        // Preview Imágenes
                         imagenesPreview.innerHTML = '';
-                        (p.imagenes || []).forEach(img => {
+                        (p.imagenes || []).forEach(ruta => {
                             const div = document.createElement('div');
                             div.className = 'image-preview';
-                            div.innerHTML = `<img src="${img}">`;
+                            div.innerHTML = `<img src="${ruta}">`;
                             imagenesPreview.appendChild(div);
                         });
 
-                        formTitle.textContent = `Editar Pedido #${p.id}`;
-                        formSubtitle.textContent = 'Modifica los datos y presiona Actualizar.';
-                        submitButton.textContent = 'Actualizar Pedido';
-                        
-                        // Scroll suave al formulario
+                        paletaColorPreview.innerHTML = '';
+                        if (p.paletaColor) {
+                            const div = document.createElement('div');
+                            div.className = 'image-preview';
+                            div.innerHTML = `<img src="${p.paletaColor}">`;
+                            paletaColorPreview.appendChild(div);
+                        }
+
+                        formTitle.innerText = "Editando Pedido #" + p.id;
+                        submitButton.innerText = "Actualizar Pedido";
                         window.scrollTo({ top: document.getElementById('pedidoForm').offsetTop - 50, behavior: 'smooth' });
                     }
                 });
         }
-    });
 
+        // ELIMINAR (Compatible con tu DELETE en PHP)
+        const btnDelete = e.target.closest('.delete-btn');
+        if (btnDelete) {
+            const id = btnDelete.getAttribute('data-id');
+            if (confirm(`¿Seguro que deseas eliminar el pedido #${id}?`)) {
+                fetch(`php/deleteOrder.php?id=${id}`, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("Pedido borrado.");
+                            cargarPedidos(buscador.value);
+                            if (pedidoIdField.value == id) location.reload();
+                        } else {
+                            alert("Error: " + data.message);
+                        }
+                    });
+            }
+        }
+    });
 });
 </script>
 </body>
