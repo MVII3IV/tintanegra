@@ -3,8 +3,8 @@ require_once 'config.php';
 require_once 'id-generator.php'; // Incluye el nuevo generador de ID
 
 // Directorios de subida
-$uploadDir = 'uploads/';
-$colorPalettesDir = 'uploads/color_palettes/';
+$uploadDir = '../uploads/';
+$colorPalettesDir = '../uploads/color_palettes/';
 
 // Asegurarse de que los directorios existan
 if (!is_dir($uploadDir)) {

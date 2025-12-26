@@ -12,7 +12,7 @@ require_once 'php/config.php';
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Crear / Editar Pedido</title>
+<title>Gestión de Pedidos - Panel Local</title>
 
 <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
 <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
@@ -25,27 +25,38 @@ require_once 'php/config.php';
 <link rel="stylesheet" href="assets/css/responsive.css" />
 <link rel="stylesheet" href="assets/css/rtl.css" />
 <link rel="stylesheet" href="assets/css/orders.css" /> 
+
 <script src="assets/js/swiper-bundle.min.js"></script>
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 
 <style>
-    /* Estilos para la tabla de resultados */
+    body { background-color: gray; } /* Mantengo tu color de fondo original */
+    
     #resultados table {
         width: 100%;
         border-collapse: collapse;
-    }
-    body{
-        background-color: gray;
+        background-color: white;
     }
     #resultados th, #resultados td {
-        padding: 8px 12px;
+        padding: 12px;
         border: 1px solid #dee2e6;
+        text-align: center;
     }
     #resultados th {
         background-color: #f8f9fa;
+        font-weight: bold;
     }
-    #resultados td button {
-        margin-right: 5px;
+    .image-preview-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    .image-preview img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
     }
 </style>
 </head>
@@ -54,19 +65,15 @@ require_once 'php/config.php';
 <div class="pedido-container">
     <div class="pedido-header text-center mb-5">
         <h2 id="formTitle">Gestionar Pedido</h2>
-        <p class="pedido-subtitle" id="formSubtitle">Crea un nuevo pedido o busca uno existente para editar.</p>
+        <p class="pedido-subtitle" id="formSubtitle">Crea un nuevo pedido o selecciona uno de la lista para editar.</p>
     </div>
 
-    <!-- 🔍 Buscador por NOMBRE -->
     <div class="card-soft mb-4 p-4">
-        <div class="section-title text-center mb-4">Buscar Pedido por Nombre</div>
-        <div class="input-group mb-3">
-            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Introduce el nombre a buscar">
-            <button class="btn btn-primary" type="submit" id="searchByNameButton">
-                <i class="bx bx-search"></i> Buscar
-            </button>
+        <div class="section-title text-center mb-4">Pedidos en Sistema</div>
+        
+        <div id="resultados" class="mt-3 table-responsive">
+            <p class="text-center">Cargando pedidos...</p>
         </div>
-        <div id="resultados" class="mt-3"></div>
     </div>
 
     <form id="pedidoForm" action="php/createOrder.php" method="POST" enctype="multipart/form-data">
@@ -128,20 +135,19 @@ require_once 'php/config.php';
             <div class="mb-4">
                 <label for="imagenes" class="form-label">Subir Imágenes del Diseño (múltiples)</label>
                 <input type="file" class="form-control" id="imagenes" name="imagenes[]" multiple accept="image/*">
-                <small class="form-text text-muted">Max 2MB por archivo</small>
                 <div id="imagenesPreview" class="image-preview-container"></div>
             </div>
 
             <div class="mb-3">
                 <label for="paletaColor" class="form-label">Subir Imagen de Paleta de Colores (una)</label>
                 <input type="file" class="form-control" id="paletaColor" name="paletaColor" accept="image/*">
-                <small class="form-text text-muted">Max 2MB por archivo</small>
                 <div id="paletaColorPreview" class="image-preview-container"></div>
             </div>
         </div> 
 
         <div class="d-grid mt-4">
             <button type="submit" id="submitButton" class="btn btn-primary btn-lg">Guardar Pedido</button>
+            <button type="button" class="btn btn-secondary mt-2" onclick="location.reload()">Nuevo Pedido / Limpiar</button>
         </div>
     </form>
 </div>
@@ -149,6 +155,7 @@ require_once 'php/config.php';
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const tallasContainer = document.getElementById('tallasContainer');
+    const resultadosDiv = document.getElementById('resultados');
     const pedidoIdField = document.getElementById('pedidoId');
     const formTitle = document.getElementById('formTitle');
     const formSubtitle = document.getElementById('formSubtitle');
@@ -157,52 +164,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const paletaColorPreview = document.getElementById('paletaColorPreview');
     const nombrePedidoInput = document.getElementById('nombrePedido');
 
-    // ======================
-    // Función para añadir tallas
-    // ======================
-    function addTallaEntry(talla = '', cantidad = 1, color = '#563d7c') {
-        const newTallaEntry = document.createElement('div');
-        newTallaEntry.className = 'talla-entry d-flex align-items-center gap-2 mb-2';
-        newTallaEntry.innerHTML = `
-            <input type="text" class="form-control" name="talla[]" placeholder="Talla (Ej: S, M, L)" value="${talla}">
-            <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="${cantidad}" min="1">
-            <input type="color" class="form-control form-control-color" name="color[]" value="${color}" title="Elige tu color">
-            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
-        `;
-        tallasContainer.appendChild(newTallaEntry);
-    }
-
-    // ======================
-    // Evento para añadir talla
-    // ======================
-    document.getElementById('addTalla').addEventListener('click', function(e){
-        e.preventDefault();
-        addTallaEntry();
-    });
-
-    // ======================
-    // Eliminar talla
-    // ======================
-    tallasContainer.addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-talla') || e.target.closest('.remove-talla')) {
-            const button = e.target.classList.contains('remove-talla') ? e.target : e.target.closest('.remove-talla');
-            if (tallasContainer.children.length > 1) {
-                button.closest('.talla-entry').remove();
-            } else {
-                alert('Debe haber al menos una talla.');
-            }
-        }
-    });
-
-    // ======================
-    // Buscar por nombre
-    // ======================
-    document.getElementById('searchByNameButton').addEventListener('click', function(e) {
-        e.preventDefault();
-        const nombre = document.getElementById('nombre').value.trim();
-        const resultadosDiv = document.getElementById('resultados');
-        resultadosDiv.innerHTML = 'Buscando...';
-
+    // ==========================================
+    // 1. CARGA AUTOMÁTICA DE PEDIDOS
+    // ==========================================
+    function cargarPedidos(nombre = '') {
         fetch('php/getOrderByName.php?nombre=' + encodeURIComponent(nombre))
             .then(res => res.json())
             .then(data => {
@@ -231,30 +196,72 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td>${p.fechaInicio}</td>
                             <td>${p.fechaEntrega}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i> Editar</button>
-                                <button class="btn btn-sm btn-danger delete-btn" data-id="${p.id}"><i class="bx bx-trash"></i> Eliminar</button>
+                                <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i> Editar</button>
+                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${p.id}"><i class="bx bx-trash"></i></button>
                             </td>
                         `;
                         table.querySelector('tbody').appendChild(row);
                     });
                     resultadosDiv.appendChild(table);
                 } else {
-                    resultadosDiv.innerHTML = '<p class="text-muted">No se encontraron pedidos.</p>';
+                    resultadosDiv.innerHTML = '<p class="text-muted">No hay pedidos disponibles.</p>';
                 }
             })
             .catch(err => {
                 console.error(err);
-                resultadosDiv.innerHTML = '<p class="text-danger">Ocurrió un error al buscar.</p>';
+                resultadosDiv.innerHTML = '<p class="text-danger">Error al cargar la tabla.</p>';
             });
+    }
+
+    // Ejecutar al cargar la página
+    cargarPedidos();
+
+    // Evento del botón buscar
+    document.getElementById('searchByNameButton').addEventListener('click', function() {
+        const query = document.getElementById('nombreBusqueda').value;
+        cargarPedidos(query);
     });
 
-    // ======================
-    // Editar pedido desde la tabla
-    // ======================
-    document.getElementById('resultados').addEventListener('click', function(e){
-        if(e.target.closest('.edit-btn')) {
-            const id = e.target.closest('.edit-btn').dataset.id;
-            fetch(`php/getOrderById?id=${id}`)
+    // ==========================================
+    // 2. LÓGICA DE TALLAS
+    // ==========================================
+    function addTallaEntry(talla = '', cantidad = 1, color = '#563d7c') {
+        const newTallaEntry = document.createElement('div');
+        newTallaEntry.className = 'talla-entry d-flex align-items-center gap-2 mb-2';
+        newTallaEntry.innerHTML = `
+            <input type="text" class="form-control" name="talla[]" placeholder="Talla" value="${talla}">
+            <input type="number" class="form-control" name="cantidad[]" placeholder="Cantidad" value="${cantidad}" min="1">
+            <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
+            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
+        `;
+        tallasContainer.appendChild(newTallaEntry);
+    }
+
+    document.getElementById('addTalla').addEventListener('click', (e) => {
+        e.preventDefault();
+        addTallaEntry();
+    });
+
+    tallasContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-talla')) {
+            if (tallasContainer.children.length > 1) {
+                e.target.closest('.talla-entry').remove();
+            }
+        }
+    });
+
+    // Iniciar con una fila de talla
+    addTallaEntry();
+
+    // ==========================================
+    // 3. EDITAR PEDIDO (CARGAR EN FORMULARIO)
+    // ==========================================
+    resultadosDiv.addEventListener('click', function(e){
+        const editBtn = e.target.closest('.edit-btn');
+        if(editBtn) {
+            const id = editBtn.dataset.id;
+            // IMPORTANTE: Asegúrate de que el archivo sea php/editor.php o php/getOrderDetail.php
+            fetch(`php/editor.php?id=${id}`) 
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) {
@@ -269,41 +276,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         // Cargar tallas
                         tallasContainer.innerHTML = '';
-                        const tallas = p.tallas || [];
-                        if(tallas.length > 0) tallas.forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
-                        else addTallaEntry();
+                        if(p.tallas && p.tallas.length > 0) {
+                            p.tallas.forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
+                        } else {
+                            addTallaEntry();
+                        }
 
-                        // Cargar imágenes
+                        // Preview Imágenes
                         imagenesPreview.innerHTML = '';
                         (p.imagenes || []).forEach(img => {
                             const div = document.createElement('div');
                             div.className = 'image-preview';
-                            div.innerHTML = `<img src="${img}" alt="Imagen previa">`;
+                            div.innerHTML = `<img src="${img}">`;
                             imagenesPreview.appendChild(div);
                         });
 
-                        // Cargar paleta
-                        paletaColorPreview.innerHTML = '';
-                        if(p.paletaColor) {
-                            const div = document.createElement('div');
-                            div.className = 'image-preview';
-                            div.innerHTML = `<img src="${p.paletaColor}" alt="Paleta de colores">`;
-                            paletaColorPreview.appendChild(div);
-                        }
-
                         formTitle.textContent = `Editar Pedido #${p.id}`;
-                        formSubtitle.textContent = 'Edita los detalles de este pedido existente.';
+                        formSubtitle.textContent = 'Modifica los datos y presiona Actualizar.';
                         submitButton.textContent = 'Actualizar Pedido';
+                        
+                        // Scroll suave al formulario
+                        window.scrollTo({ top: document.getElementById('pedidoForm').offsetTop - 50, behavior: 'smooth' });
                     }
                 });
         }
     });
 
 });
-
-
-
-
 </script>
 </body>
 </html>

@@ -5,14 +5,18 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'pedidos' => []];
 
-if (isset($_GET['nombre']) && !empty(trim($_GET['nombre']))) {
-    $nombreBusqueda = '%' . trim($_GET['nombre']) . '%';
+// Eliminamos la restricción de !empty para que permita buscar todo si está vacío
+if (isset($_GET['nombre'])) {
+    // Si hay nombre buscamos por filtro, si está vacío usamos '%' para traer todos
+    $busqueda = trim($_GET['nombre']);
+    $nombreBusqueda = '%' . $busqueda . '%';
 
     try {
         $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $stmt = $pdo->prepare("SELECT * FROM pedidos WHERE nombre LIKE :nombre");
+        // La consulta con LIKE '%' traerá todos los registros si el input está vacío
+        $stmt = $pdo->prepare("SELECT * FROM pedidos WHERE nombre LIKE :nombre ORDER BY id DESC");
         $stmt->execute([':nombre' => $nombreBusqueda]);
         $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -26,14 +30,16 @@ if (isset($_GET['nombre']) && !empty(trim($_GET['nombre']))) {
             $response['success'] = true;
             $response['pedidos'] = $pedidos;
         } else {
-            $response['message'] = 'No se encontraron pedidos con ese nombre';
+            $response['success'] = true; // Sigue siendo un éxito técnico, solo que la lista está vacía
+            $response['message'] = 'No se encontraron pedidos';
+            $response['pedidos'] = [];
         }
 
     } catch (PDOException $e) {
-        $response['message'] = $e->getMessage();
+        $response['message'] = "Error de base de datos: " . $e->getMessage();
     }
 } else {
-    $response['message'] = 'No se proporcionó nombre';
+    $response['message'] = 'Parámetro de búsqueda no recibido';
 }
 
 echo json_encode($response);
