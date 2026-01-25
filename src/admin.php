@@ -179,15 +179,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addTallaEntry(talla = '', cantidad = 1, color = '#000000') {
+        // --- LÓGICA DE CLONACIÓN ---
+        // Si la función se llama sin parámetros (clic en el botón "+ Añadir")
+        // intentamos obtener los datos de la última fila existente
+        if (talla === '' && color === '#000000') {
+            const filas = tallasContainer.querySelectorAll('.talla-entry');
+            if (filas.length > 0) {
+                const ultimaFila = filas[filas.length - 1];
+                talla = ultimaFila.querySelector('input[name="talla[]"]').value;
+                color = ultimaFila.querySelector('input[name="color[]"]').value;
+                // La cantidad la reseteamos a 1 por defecto para evitar errores de suma
+                cantidad = 1; 
+            }
+        }
+
         const div = document.createElement('div');
         div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
         div.innerHTML = `
             <input type="text" class="form-control" name="talla[]" placeholder="Ej: L" value="${talla}">
             <input type="number" class="form-control" name="cantidad[]" value="${cantidad}" min="0" style="width: 80px;">
             <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
-            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>`;
+            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
+        `;
         tallasContainer.appendChild(div);
+        
+        // Escuchar cambios para el total de piezas
         div.querySelector('input[name="cantidad[]"]').addEventListener('input', calcularTotalPiezas);
+        
         calcularTotalPiezas();
     }
 
