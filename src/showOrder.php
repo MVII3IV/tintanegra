@@ -22,8 +22,14 @@ session_start();
         .card-soft { border-radius: 15px; transition: transform 0.2s; }
         .timeline-item.completed .timeline-circle { background-color: #0d6efd; color: white; }
         #card-saldo { transition: all 0.4s ease; }
+        
+        /* Estilos nuevos para campos adicionales */
+        .instrucciones-box { background-color: #fff3cd; border-left: 5px solid #ffc107; color: #856404; padding: 15px; border-radius: 8px; font-style: italic; }
+        .btn-whatsapp { background-color: #25d366; color: white; border-radius: 50px; padding: 5px 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; }
+        .btn-whatsapp:hover { background-color: #128c7e; color: white; }
+        
         @media print {
-            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination { display: none !important; }
+            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp { display: none !important; }
             body { background: white !important; }
             .pedido-container { box-shadow: none !important; border: none !important; width: 100% !important; }
         }
@@ -51,7 +57,8 @@ session_start();
     
     <div class="pedido-header text-center mb-4">
         <h2 class="fw-bold">Detalles de tu Pedido</h2>
-        <p id="pedido-nombre" class="text-muted mb-0 h5"></p>
+        <p id="pedido-nombre" class="text-muted mb-2 h5"></p>
+        <div id="contacto-cliente" class="mb-3"></div>
     </div>
 
     <div class="swiper mySwiper mb-4">
@@ -61,34 +68,20 @@ session_start();
         <div class="swiper-pagination"></div>
     </div>
 
-    <div class="text-center mb-4"> 
+    <div class="d-flex justify-content-center gap-2 mb-4"> 
         <button class="btn btn-light border btn-sm" data-bs-toggle="modal" data-bs-target="#modalPaleta">
-            <i class="bx bx-palette text-primary"></i> Ver paleta de colores
+            <i class="bx bx-palette text-primary"></i> Paleta de colores
         </button>
+        <div id="btn-cotizacion-container"></div>
     </div>
 
     <div class="pedido-timeline mb-5">
         <ul class="timeline-list d-flex justify-content-between list-unstyled px-0 mb-0">
-            <li class="timeline-item text-center">
-                <div class="timeline-circle shadow-sm"><i class="bx bx-receipt"></i></div>
-                <div class="timeline-label small mt-2">Recibida</div>
-            </li>
-            <li class="timeline-item text-center">
-                <div class="timeline-circle shadow-sm"><i class="bx bx-dollar"></i></div>
-                <div class="timeline-label small mt-2">Anticipo</div>
-            </li>
-            <li class="timeline-item text-center">
-                <div class="timeline-circle shadow-sm"><i class="bx bx-cog"></i></div>
-                <div class="timeline-label small mt-2">Producción</div>
-            </li>
-            <li class="timeline-item text-center">
-                <div class="timeline-circle shadow-sm"><i class="bx bx-check-double"></i></div>
-                <div class="timeline-label small mt-2">Finalizada</div>
-            </li>
-            <li class="timeline-item text-center">
-                <div class="timeline-circle shadow-sm"><i class="bx bx-package"></i></div>
-                <div class="timeline-label small mt-2">Entregada</div>
-            </li>
+            <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-receipt"></i></div><div class="timeline-label small mt-2">Recibida</div></li>
+            <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-dollar"></i></div><div class="timeline-label small mt-2">Anticipo</div></li>
+            <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-cog"></i></div><div class="timeline-label small mt-2">Producción</div></li>
+            <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-check-double"></i></div><div class="timeline-label small mt-2">Finalizada</div></li>
+            <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-package"></i></div><div class="timeline-label small mt-2">Entregada</div></li>
         </ul>
     </div>
 
@@ -97,14 +90,8 @@ session_start();
             <div class="card-soft h-100 p-4 border shadow-sm bg-light">
                 <div class="text-center mb-3 fw-bold border-bottom pb-2">FECHAS CLAVE</div>
                 <div class="d-flex justify-content-around text-center">
-                    <div>
-                        <small class="text-muted d-block">Inicio</small>
-                        <span id="pedido-fecha-inicio" class="fw-bold"></span>
-                    </div>
-                    <div>
-                        <small class="text-muted d-block">Entrega</small>
-                        <span id="pedido-fecha-entrega" class="fw-bold text-primary"></span>
-                    </div>
+                    <div><small class="text-muted d-block">Inicio</small><span id="pedido-fecha-inicio" class="fw-bold"></span></div>
+                    <div><small class="text-muted d-block">Entrega</small><span id="pedido-fecha-entrega" class="fw-bold text-primary"></span></div>
                 </div>
             </div>
         </div>
@@ -113,12 +100,8 @@ session_start();
             <div id="contenedor-pagos" class="h-100">
                 <?php if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
                     <div class="card-soft p-4 h-100 border shadow-sm bg-white">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Costo Total:</span> <span id="admin-costo-total" class="fw-bold"></span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1 text-success">
-                            <span>Pagado:</span> <span id="admin-anticipo-pagado" class="fw-bold"></span>
-                        </div>
+                        <div class="d-flex justify-content-between mb-1"><span>Costo Total:</span> <span id="admin-costo-total" class="fw-bold"></span></div>
+                        <div class="d-flex justify-content-between mb-1 text-success"><span>Pagado:</span> <span id="admin-anticipo-pagado" class="fw-bold"></span></div>
                         <hr class="my-2">
                         <div id="card-saldo" class="p-2 rounded-3 text-center text-white shadow-sm">
                             <small class="d-block opacity-75">Saldo Pendiente</small>
@@ -138,49 +121,29 @@ session_start();
         </div>
     </div>
 
+    <div id="seccion-instrucciones" class="mb-4 d-none">
+        <div class="fw-bold mb-2 small text-uppercase text-muted"><i class="bx bx-info-circle"></i> Instrucciones de taller</div>
+        <div class="instrucciones-box" id="pedido-instrucciones"></div>
+    </div>
+
     <div class="card-soft p-4 border shadow-sm mb-4">
-    <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
-    <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0 text-center">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 40%;">Talla</th>
-                    <th style="width: 30%;">Cantidad</th>
-                    <th style="width: 30%;">Color</th>
-                </tr>
-            </thead>
-            <tbody id="pedido-tallas"></tbody>
-            <tfoot class="table-light border-top">
-                <tr>
-                    <td class="text-center fw-bold">Total piezas</td>
-                    <td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-</div>
-</div>
-
-<div class="modal fade" id="modalPaleta" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
-            <div class="modal-header border-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body text-center p-4">
-                <img id="pedido-paleta" src="" class="img-fluid rounded shadow-sm" />
-            </div>
+        <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 text-center">
+                <thead class="table-light">
+                    <tr><th style="width: 40%;">Talla</th><th style="width: 30%;">Cantidad</th><th style="width: 30%;">Color</th></tr>
+                </thead>
+                <tbody id="pedido-tallas"></tbody>
+                <tfoot class="table-light border-top">
+                    <tr><td class="text-center fw-bold">Total piezas</td><td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td><td></td></tr>
+                </tfoot>
+            </table>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalVisor" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content bg-dark border-0">
-            <div class="modal-header border-0"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body p-0 text-center"><img id="img-visor" src="" style="max-height: 85vh; width: auto; object-fit: contain;"></div>
-        </div>
-    </div>
-</div>
+<div class="modal fade" id="modalPaleta" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content shadow"><div class="modal-header border-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center p-4"><img id="pedido-paleta" src="" class="img-fluid rounded shadow-sm" /></div></div></div></div>
+<div class="modal fade" id="modalVisor" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-dark border-0"><div class="modal-header border-0"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-0 text-center"><img id="img-visor" src="" style="max-height: 85vh; width: auto; object-fit: contain;"></div></div></div></div>
 
 <script>
     const estados = ["Recibida", "Anticipo recibido", "En produccion", "Finalizada", "Entregada"];
@@ -193,7 +156,7 @@ session_start();
     if (!pedidoId) {
         container.innerHTML = '<h3 class="text-center text-danger py-5">ID de pedido no proporcionado</h3>';
     } else {
-        fetch(`php/editor?id=${pedidoId}`)
+        fetch(`php/editor.php?id=${pedidoId}`)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.pedido) {
@@ -206,30 +169,54 @@ session_start();
             const anticipo = parseFloat(p.anticipo || 0);
             const restante = Math.max(0, costo - anticipo);
 
-            // 1. LLENAR DATOS DE ADMIN (Si existen)
+            // 1. LLENAR DATOS GENERALES
+            document.getElementById("pedido-nombre").textContent = p.nombre;
+            document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
+            document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
+            
+            // WHATSAPP
+            if (p.telefono) {
+                const telLimpio = p.telefono.replace(/\D/g,'');
+                document.getElementById("contacto-cliente").innerHTML = `
+                    <a href="https://wa.me/52${telLimpio}" target="_blank" class="btn-whatsapp">
+                        <i class="bx bxl-whatsapp"></i> Contactar por WhatsApp
+                    </a>`;
+            }
+
+            // COTIZACIÓN
+            if (p.cotizacion) {
+                document.getElementById("btn-cotizacion-container").innerHTML = `
+                    <a href="${p.cotizacion}" target="_blank" class="btn btn-outline-dark btn-sm">
+                        <i class="bx bx-file"></i> Ver Cotización
+                    </a>`;
+            }
+
+            // INSTRUCCIONES
+            if (p.instrucciones && p.instrucciones.trim() !== "") {
+                const instrSec = document.getElementById("seccion-instrucciones");
+                instrSec.classList.remove("d-none");
+                document.getElementById("pedido-instrucciones").textContent = p.instrucciones;
+            }
+
+            // 2. TIMELINE Y PAGOS (Lógica existente)
             const elTotal = document.getElementById("admin-costo-total");
             if (elTotal) {
                 elTotal.textContent = fmtMoney(costo);
                 document.getElementById("admin-anticipo-pagado").textContent = fmtMoney(anticipo);
                 document.getElementById("admin-saldo-restante").textContent = fmtMoney(restante);
+                
                 const cardS = document.getElementById("card-saldo");
-                if (restante > 0) { cardS.classList.add("bg-danger"); cardS.classList.remove("bg-success"); }
-                else { cardS.classList.add("bg-success"); cardS.classList.remove("bg-danger"); }
+                if (restante > 0) { 
+                    // CAMBIO: Ahora usamos bg-warning para el amarillo y text-dark para que se lea bien
+                    cardS.classList.add("bg-warning", "text-dark"); 
+                    cardS.classList.remove("bg-success", "bg-danger", "text-white"); 
+                }
+                else { 
+                    cardS.classList.add("bg-success", "text-white"); 
+                    cardS.classList.remove("bg-warning", "bg-danger", "text-dark"); 
+                }
             }
 
-            // 2. LLENAR DATOS GENERALES
-            document.getElementById("pedido-nombre").textContent = p.nombre;
-            document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
-            document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
-            
-            if (p.paletaColor) document.getElementById("pedido-paleta").src = p.paletaColor;
-
-            // Lógica Timeline
-            document.querySelectorAll(".timeline-item").forEach((item, index) => {
-                if (index <= estados.indexOf(p.status)) item.classList.add("completed");
-            });
-
-            // 3. VISTA PÚBLICA (Si existen)
             const elRestante = document.getElementById("pedido-restante");
             if (elRestante) {
                 elRestante.textContent = fmtMoney(restante);
@@ -237,25 +224,27 @@ session_start();
                 document.getElementById("barra-pago").style.width = pct + "%";
             }
 
-            // 4. TABLA TALLAS CON SUMATORIA
+            document.querySelectorAll(".timeline-item").forEach((item, index) => {
+                if (index <= estados.indexOf(p.status)) item.classList.add("completed");
+            });
+
+            if (p.paletaColor) document.getElementById("pedido-paleta").src = p.paletaColor;
+
+            // 3. TABLA TALLAS
             const tbody = document.getElementById("pedido-tallas");
             const totalDisplay = document.getElementById("total-piezas");
             tbody.innerHTML = "";
-            let totalP = 0; // Variable para el conteo
-
+            let totalP = 0;
             (p.tallas || []).forEach(t => {
                 const cant = parseInt(t.cantidad) || 0;
-                totalP += cant; // Sumar cada fila
-
+                totalP += cant;
                 const tr = document.createElement("tr");
                 tr.innerHTML = `<td>${t.talla}</td><td>${cant}</td><td><span class="color-chip shadow-sm" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:2px solid white;"></span></td>`;
                 tbody.appendChild(tr);
             });
-            
-            // Mostrar el total sumado
             if(totalDisplay) totalDisplay.textContent = totalP;
 
-            // 5. CARRUSEL Y VISOR
+            // 4. CARRUSEL
             const wrap = document.getElementById("pedido-imagenes");
             wrap.innerHTML = "";
             (p.imagenes || []).forEach(src => {
@@ -276,6 +265,7 @@ session_start();
             });
         })
         .catch(err => {
+            console.error(err);
             container.innerHTML = '<h3 class="text-center text-danger py-5">Error en el servidor</h3>';
         });
     }

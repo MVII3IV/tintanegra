@@ -2,37 +2,38 @@
 require_once 'config.php';
 require_once 'id-generator.php'; 
 
-// 1. CONFIGURACIÓN DE DIRECTORIOS
 $uploadDir = '../uploads/';
 $colorPalettesDir = '../uploads/color_palettes/';
+$cotizacionesDir = '../uploads/cotizaciones/';
 
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 if (!is_dir($colorPalettesDir)) mkdir($colorPalettesDir, 0777, true);
+if (!is_dir($cotizacionesDir)) mkdir($cotizacionesDir, 0777, true);
 
-// 2. GESTIÓN DE IDENTIFICADOR (Crucial para el nombre de archivos)
 $pedidoId = $_POST['pedido_id'] ?? null;
 $esEdicion = !empty($pedidoId);
 
 if (!$esEdicion) {
-    // Si es nuevo, generamos el ID de una vez para usarlo en los nombres de archivos
     $pedidoId = generateFunnyOrderId();
 }
 
-// 3. RECUPERAR DATOS PREVIOS (Si es edición, para limpieza de archivos)
+// RECUPERAR DATOS PREVIOS PARA LIMPIEZA
 $currentPedidoImages = [];
 $currentPaletaColorPath = null;
+$currentCotizacionPath = null;
 
 if ($esEdicion) {
-    $stmt = $pdo->prepare("SELECT imagenes, paletaColor FROM pedidos WHERE id = :id");
+    $stmt = $pdo->prepare("SELECT imagenes, paletaColor, cotizacion FROM pedidos WHERE id = :id");
     $stmt->execute([':id' => $pedidoId]);
     $existing = $stmt->fetch();
     if ($existing) {
         $currentPedidoImages = json_decode($existing['imagenes'], true) ?? [];
         $currentPaletaColorPath = $existing['paletaColor'];
+        $currentCotizacionPath = $existing['cotizacion'];
     }
 }
 
-// 4. PROCESAR TALLAS
+// PROCESAR TALLAS
 $tallas = [];
 if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     foreach ($_POST['talla'] as $i => $t) {
@@ -46,93 +47,83 @@ if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     }
 }
 
-// 5. PROCESAR IMÁGENES DEL DISEÑO
+// PROCESAR IMÁGENES DISEÑO (Misma lógica anterior)
 $imagenes = [];
 $newImagesUploaded = false;
-
 if (isset($_FILES['imagenes']) && is_array($_FILES['imagenes']['tmp_name'])) {
     foreach ($_FILES['imagenes']['tmp_name'] as $i => $tmp_name) {
         if (!empty($tmp_name) && $_FILES['imagenes']['error'][$i] == UPLOAD_ERR_OK) {
-            
             $ext = pathinfo($_FILES['imagenes']['name'][$i], PATHINFO_EXTENSION);
-            // Nombre profesional: ID_TIMESTAMP_RANDOM.EXT
             $fileName = $pedidoId . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $ext;
-            
-            $targetFilePath = $uploadDir . $fileName;
-            if (move_uploaded_file($tmp_name, $targetFilePath)) {
-                $imagenes[] = "uploads/" . $fileName; // Guardamos ruta limpia
+            if (move_uploaded_file($tmp_name, $uploadDir . $fileName)) {
+                $imagenes[] = "uploads/" . $fileName;
                 $newImagesUploaded = true;
             }
         }
     }
 }
-
-// Lógica de reemplazo de imágenes
 if ($newImagesUploaded && $esEdicion) {
-    foreach ($currentPedidoImages as $oldImage) {
-        $fullOldPath = __DIR__ . "/../" . ltrim($oldImage, './');
-        if (file_exists($fullOldPath)) unlink($fullOldPath);
+    foreach ($currentPedidoImages as $old) {
+        $path = __DIR__ . "/../" . ltrim($old, './');
+        if (file_exists($path)) unlink($path);
     }
-} elseif (!$newImagesUploaded && $esEdicion) {
-    $imagenes = $currentPedidoImages;
-}
+} elseif (!$newImagesUploaded && $esEdicion) { $imagenes = $currentPedidoImages; }
 
-// 6. PROCESAR PALETA DE COLORES
-$paletaColorPath = null;
-$newPaletaUploaded = false;
-
+// PROCESAR PALETA (Misma lógica anterior)
+$paletaPath = $currentPaletaColorPath;
 if (isset($_FILES['paletaColor']) && $_FILES['paletaColor']['error'] == UPLOAD_ERR_OK) {
     $ext = pathinfo($_FILES['paletaColor']['name'], PATHINFO_EXTENSION);
-    $fileName = "PALETA_" . $pedidoId . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $ext;
-    
-    $targetFilePath = $colorPalettesDir . $fileName;
-    if (move_uploaded_file($_FILES['paletaColor']['tmp_name'], $targetFilePath)) {
-        $paletaColorPath = "uploads/color_palettes/" . $fileName;
-        $newPaletaUploaded = true;
+    $fileName = "PALETA_" . $pedidoId . "_" . time() . "." . $ext;
+    if (move_uploaded_file($_FILES['paletaColor']['tmp_name'], $colorPalettesDir . $fileName)) {
+        if ($esEdicion && $currentPaletaColorPath && file_exists(__DIR__."/../".ltrim($currentPaletaColorPath, './'))) {
+            unlink(__DIR__."/../".ltrim($currentPaletaColorPath, './'));
+        }
+        $paletaPath = "uploads/color_palettes/" . $fileName;
     }
 }
 
-// Lógica de reemplazo de paleta
-if ($newPaletaUploaded && $esEdicion && $currentPaletaColorPath) {
-    $fullOldPaleta = __DIR__ . "/../" . ltrim($currentPaletaColorPath, './');
-    if (file_exists($fullOldPaleta)) unlink($fullOldPaleta);
-} elseif (!$newPaletaUploaded && $esEdicion) {
-    $paletaColorPath = $currentPaletaColorPath;
+// --- NUEVO: PROCESAR COTIZACIÓN ---
+$cotizacionPath = $currentCotizacionPath;
+if (isset($_FILES['cotizacion']) && $_FILES['cotizacion']['error'] == UPLOAD_ERR_OK) {
+    $ext = pathinfo($_FILES['cotizacion']['name'], PATHINFO_EXTENSION);
+    $fileName = "COTIZ_" . $pedidoId . "_" . time() . "." . $ext;
+    if (move_uploaded_file($_FILES['cotizacion']['tmp_name'], $cotizacionesDir . $fileName)) {
+        if ($esEdicion && $currentCotizacionPath && file_exists(__DIR__."/../".ltrim($currentCotizacionPath, './'))) {
+            unlink(__DIR__."/../".ltrim($currentCotizacionPath, './'));
+        }
+        $cotizacionPath = "uploads/cotizaciones/" . $fileName;
+    }
 }
 
-// 7. GUARDAR EN BASE DE DATOS
 try {
     $params = [
         ':nombre'       => htmlspecialchars($_POST['nombre']),
+        ':telefono'     => htmlspecialchars($_POST['telefono']), // NUEVO
         ':status'       => htmlspecialchars($_POST['status']),
         ':fechaInicio'  => $_POST['fechaInicio'],
         ':fechaEntrega' => $_POST['fechaEntrega'],
         ':costo'        => (float)$_POST['costo'],
         ':anticipo'     => (float)$_POST['anticipo'],
         ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE),
+        ':instrucciones'=> htmlspecialchars($_POST['instrucciones']), // NUEVO
         ':imagenes'     => json_encode($imagenes, JSON_UNESCAPED_UNICODE),
-        ':paletaColor'  => $paletaColorPath,
+        ':paletaColor'  => $paletaPath,
+        ':cotizacion'   => $cotizacionPath, // NUEVO
         ':id'           => $pedidoId
     ];
 
     if ($esEdicion) {
-        $sql = "UPDATE pedidos SET nombre=:nombre, status=:status, fechaInicio=:fechaInicio, 
-                fechaEntrega=:fechaEntrega, costo=:costo, anticipo=:anticipo, tallas=:tallas, 
-                imagenes=:imagenes, paletaColor=:paletaColor WHERE id=:id";
+        $sql = "UPDATE pedidos SET nombre=:nombre, telefono=:telefono, status=:status, fechaInicio=:fechaInicio, 
+                fechaEntrega=:fechaEntrega, costo=:costo, anticipo=:anticipo, tallas=:tallas, instrucciones=:instrucciones,
+                imagenes=:imagenes, paletaColor=:paletaColor, cotizacion=:cotizacion WHERE id=:id";
     } else {
-        $sql = "INSERT INTO pedidos (id, nombre, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, imagenes, paletaColor) 
-                VALUES (:id, :nombre, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :imagenes, :paletaColor)";
+        $sql = "INSERT INTO pedidos (id, nombre, telefono, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, instrucciones, imagenes, paletaColor, cotizacion) 
+                VALUES (:id, :nombre, :telefono, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :instrucciones, :imagenes, :paletaColor, :cotizacion)";
     }
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
 
-    // Redirección final
-    $url = "../showOrder?id=" . $pedidoId . ($esEdicion ? "&updated=true" : "&created=true");
-    header("Location: $url");
+    header("Location: ../showOrder?id=" . $pedidoId . ($esEdicion ? "&updated=true" : "&created=true"));
     exit;
-
-} catch (Exception $e) {
-    echo "Error crítico: " . $e->getMessage();
-    exit;
-}
+} catch (Exception $e) { echo "Error: " . $e->getMessage(); exit; }
