@@ -6,7 +6,7 @@ session_start();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Estado de Pedido | Gestión de Taller</title>
+    <title>Estado de Pedido | Tinta Negra</title>
 
     <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="assets/css/swiper-bundle.min.css" />
@@ -23,15 +23,31 @@ session_start();
         .timeline-item.completed .timeline-circle { background-color: #0d6efd; color: white; }
         #card-saldo { transition: all 0.4s ease; }
         
-        /* Estilos nuevos para campos adicionales */
-        .instrucciones-box { background-color: #fff3cd; border-left: 5px solid #ffc107; color: #856404; padding: 15px; border-radius: 8px; font-style: italic; }
-        .btn-whatsapp { background-color: #25d366; color: white; border-radius: 50px; padding: 5px 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; }
+        /* Estilos para Instrucciones y Contacto */
+        .instrucciones-box { background-color: #fff3cd; border-left: 5px solid #ffc107; color: #856404; padding: 15px; border-radius: 8px; font-style: italic; white-space: pre-wrap; }
+        .btn-whatsapp { background-color: #25d366; color: white; border-radius: 50px; padding: 6px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; transition: background 0.3s; }
         .btn-whatsapp:hover { background-color: #128c7e; color: white; }
-        
+
         @media print {
-            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp { display: none !important; }
-            body { background: white !important; }
-            .pedido-container { box-shadow: none !important; border: none !important; width: 100% !important; }
+            /* Ocultar elementos innecesarios */
+            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp, .navbar, .modal { 
+                display: none !important; 
+            }
+            body { background: white !important; font-size: 11pt; }
+            .pedido-container { box-shadow: none !important; border: 1px solid #ddd !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; }
+            
+            /* Ajuste de imágenes para que salgan todas en la hoja */
+            .swiper { height: auto !important; }
+            .swiper-wrapper { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; transform: none !important; }
+            .swiper-slide { width: 45% !important; height: auto !important; display: block !important; }
+            .swiper-slide img { max-height: 200px !important; width: auto !important; border: 1px solid #eee; }
+
+            /* Claridad en textos técnicos */
+            .instrucciones-box { background-color: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
+            .color-chip { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            /* Forzar visualización de campos ocultos de impresión */
+            .d-print-block { display: block !important; }
         }
     </style>
 </head>
@@ -40,15 +56,9 @@ session_start();
 <div class="container mt-3">
     <?php if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
         <div class="admin-top-bar d-flex justify-content-between align-items-center bg-white p-2 px-3 shadow-sm mb-4">
-            <a href="admin.php" class="btn btn-primary btn-sm">
-                <i class="bx bx-arrow-back"></i> Regresar al Panel
-            </a>
-            <div class="d-none d-md-block text-center">
-                <span class="badge bg-dark">MODO ADMINISTRADOR</span>
-            </div>
-            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
-                <i class="bx bx-printer"></i> Imprimir Ficha
-            </button>
+            <a href="admin.php" class="btn btn-primary btn-sm"><i class="bx bx-arrow-back"></i> Panel</a>
+            <div class="d-none d-md-block text-center"><span class="badge bg-dark">ADMINISTRADOR</span></div>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bx bx-printer"></i> Imprimir Ficha</button>
         </div>
     <?php endif; ?>
 </div>
@@ -58,7 +68,11 @@ session_start();
     <div class="pedido-header text-center mb-4">
         <h2 class="fw-bold">Detalles de tu Pedido</h2>
         <p id="pedido-nombre" class="text-muted mb-2 h5"></p>
-        <div id="contacto-cliente" class="mb-3"></div>
+        
+        <div id="contacto-cliente" class="mb-2"></div>
+        <div class="d-none d-print-block text-muted small mb-3">
+            <strong>Contacto:</strong> <span id="pedido-telefono-print"></span>
+        </div>
     </div>
 
     <div class="swiper mySwiper mb-4">
@@ -88,7 +102,7 @@ session_start();
     <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="card-soft h-100 p-4 border shadow-sm bg-light">
-                <div class="text-center mb-3 fw-bold border-bottom pb-2">FECHAS CLAVE</div>
+                <div class="text-center mb-3 fw-bold border-bottom pb-2 text-uppercase small">Fechas Clave</div>
                 <div class="d-flex justify-content-around text-center">
                     <div><small class="text-muted d-block">Inicio</small><span id="pedido-fecha-inicio" class="fw-bold"></span></div>
                     <div><small class="text-muted d-block">Entrega</small><span id="pedido-fecha-entrega" class="fw-bold text-primary"></span></div>
@@ -100,20 +114,18 @@ session_start();
             <div id="contenedor-pagos" class="h-100">
                 <?php if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
                     <div class="card-soft p-4 h-100 border shadow-sm bg-white">
-                        <div class="d-flex justify-content-between mb-1"><span>Costo Total:</span> <span id="admin-costo-total" class="fw-bold"></span></div>
-                        <div class="d-flex justify-content-between mb-1 text-success"><span>Pagado:</span> <span id="admin-anticipo-pagado" class="fw-bold"></span></div>
+                        <div class="d-flex justify-content-between mb-1 small text-muted"><span>Costo Total:</span> <span id="admin-costo-total"></span></div>
+                        <div class="d-flex justify-content-between mb-1 small text-success"><span>Pagado:</span> <span id="admin-anticipo-pagado"></span></div>
                         <hr class="my-2">
-                        <div id="card-saldo" class="p-2 rounded-3 text-center text-white shadow-sm">
+                        <div id="card-saldo" class="p-2 rounded-3 text-center shadow-sm">
                             <small class="d-block opacity-75">Saldo Pendiente</small>
                             <h3 class="mb-0 fw-bold" id="admin-saldo-restante"></h3>
                         </div>
                     </div>
                 <?php else: ?>
                     <div class="card-soft h-100 p-4 border shadow-sm bg-white text-center">
-                        <div class="d-flex justify-content-between mb-2"><span>Restante a Pagar</span><strong id="pedido-restante" class="text-danger"></strong></div>
-                        <div class="progress" style="height: 12px; border-radius: 10px;">
-                            <div id="barra-pago" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-                        </div>
+                        <div class="d-flex justify-content-between mb-2"><span>Saldo Pendiente</span><strong id="pedido-restante" class="text-warning"></strong></div>
+                        <div class="progress" style="height: 12px; border-radius: 10px;"><div id="barra-pago" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 0%"></div></div>
                         <small class="text-muted mt-2 d-block">Saldar al momento de la entrega</small>
                     </div>
                 <?php endif; ?>
@@ -123,7 +135,7 @@ session_start();
 
     <div id="seccion-instrucciones" class="mb-4 d-none">
         <div class="fw-bold mb-2 small text-uppercase text-muted"><i class="bx bx-info-circle"></i> Instrucciones de taller</div>
-        <div class="instrucciones-box" id="pedido-instrucciones"></div>
+        <div class="instrucciones-box shadow-sm" id="pedido-instrucciones"></div>
     </div>
 
     <div class="card-soft p-4 border shadow-sm mb-4">
@@ -174,46 +186,43 @@ session_start();
             document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
             document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
             
-            // WHATSAPP
+            // CONTACTO Y WHATSAPP
             if (p.telefono) {
+                document.getElementById("pedido-telefono-print").textContent = p.telefono;
                 const telLimpio = p.telefono.replace(/\D/g,'');
                 document.getElementById("contacto-cliente").innerHTML = `
-                    <a href="https://wa.me/52${telLimpio}" target="_blank" class="btn-whatsapp">
-                        <i class="bx bxl-whatsapp"></i> Contactar por WhatsApp
+                    <a href="https://wa.me/52${telLimpio}" target="_blank" class="btn-whatsapp shadow-sm">
+                        <i class="bx bxl-whatsapp"></i> WhatsApp
                     </a>`;
             }
 
             // COTIZACIÓN
             if (p.cotizacion) {
                 document.getElementById("btn-cotizacion-container").innerHTML = `
-                    <a href="${p.cotizacion}" target="_blank" class="btn btn-outline-dark btn-sm">
-                        <i class="bx bx-file"></i> Ver Cotización
+                    <a href="${p.cotizacion}" target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
+                        <i class="bx bx-file"></i> Cotización
                     </a>`;
             }
 
             // INSTRUCCIONES
             if (p.instrucciones && p.instrucciones.trim() !== "") {
-                const instrSec = document.getElementById("seccion-instrucciones");
-                instrSec.classList.remove("d-none");
+                document.getElementById("seccion-instrucciones").classList.remove("d-none");
                 document.getElementById("pedido-instrucciones").textContent = p.instrucciones;
             }
 
-            // 2. TIMELINE Y PAGOS (Lógica existente)
+            // 2. TIMELINE Y SALDOS
             const elTotal = document.getElementById("admin-costo-total");
             if (elTotal) {
                 elTotal.textContent = fmtMoney(costo);
                 document.getElementById("admin-anticipo-pagado").textContent = fmtMoney(anticipo);
                 document.getElementById("admin-saldo-restante").textContent = fmtMoney(restante);
-                
                 const cardS = document.getElementById("card-saldo");
                 if (restante > 0) { 
-                    // CAMBIO: Ahora usamos bg-warning para el amarillo y text-dark para que se lea bien
                     cardS.classList.add("bg-warning", "text-dark"); 
-                    cardS.classList.remove("bg-success", "bg-danger", "text-white"); 
-                }
-                else { 
+                    cardS.classList.remove("bg-success", "text-white"); 
+                } else { 
                     cardS.classList.add("bg-success", "text-white"); 
-                    cardS.classList.remove("bg-warning", "bg-danger", "text-dark"); 
+                    cardS.classList.remove("bg-warning", "text-dark"); 
                 }
             }
 
@@ -232,7 +241,6 @@ session_start();
 
             // 3. TABLA TALLAS
             const tbody = document.getElementById("pedido-tallas");
-            const totalDisplay = document.getElementById("total-piezas");
             tbody.innerHTML = "";
             let totalP = 0;
             (p.tallas || []).forEach(t => {
@@ -242,9 +250,9 @@ session_start();
                 tr.innerHTML = `<td>${t.talla}</td><td>${cant}</td><td><span class="color-chip shadow-sm" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:2px solid white;"></span></td>`;
                 tbody.appendChild(tr);
             });
-            if(totalDisplay) totalDisplay.textContent = totalP;
+            document.getElementById("total-piezas").textContent = totalP;
 
-            // 4. CARRUSEL
+            // 4. IMÁGENES (CARRUSEL)
             const wrap = document.getElementById("pedido-imagenes");
             wrap.innerHTML = "";
             (p.imagenes || []).forEach(src => {
@@ -266,7 +274,7 @@ session_start();
         })
         .catch(err => {
             console.error(err);
-            container.innerHTML = '<h3 class="text-center text-danger py-5">Error en el servidor</h3>';
+            container.innerHTML = '<h3 class="text-center text-danger py-5">Error al cargar datos</h3>';
         });
     }
 </script>
