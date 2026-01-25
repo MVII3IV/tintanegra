@@ -28,13 +28,14 @@ require_once 'php/config.php';
     <script src="assets/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        /* Estilos adicionales para la funcionalidad de administración */
         body { background-color: #f4f4f4; }
         .image-preview-container { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; background: #fff; min-height: 50px; }
         .image-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
         .table-responsive { background: #fff; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .section-title-admin { font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
         .action-btns { display: flex; gap: 5px; justify-content: center; }
+        /* Badge para resaltar que estamos en vista filtrada */
+        .filter-info { font-size: 0.8rem; color: #666; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -42,16 +43,17 @@ require_once 'php/config.php';
 <div class="container mt-5">
     <div class="pedido-header text-center mb-5">
         <h2 id="formTitle">Panel de Gestión de Pedidos</h2>
-        <p class="pedido-subtitle" id="formSubtitle">Busca, edita o elimina órdenes de trabajo.</p>
+        <p class="pedido-subtitle" id="formSubtitle">Mostrando solo pedidos pendientes de entrega.</p>
     </div>
 
     <div class="card mb-4 p-4 shadow-sm border-0">
         <div class="row mb-3 align-items-center">
             <div class="col-md-8">
-                <h5 class="mb-0">Registros en Base de Datos</h5>
+                <h5 class="mb-0">Pedidos Activos</h5>
+                <span class="filter-info">* Los pedidos con estado "Entregada" están ocultos.</span>
             </div>
             <div class="col-md-4">
-                <input type="text" id="buscadorNombre" class="form-control" placeholder="Buscar por nombre de cliente...">
+                <input type="text" id="buscadorNombre" class="form-control" placeholder="Buscar cliente activo...">
             </div>
         </div>
         <div id="resultados" class="table-responsive">
@@ -144,19 +146,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const imagenesPreview = document.getElementById('imagenesPreview');
     const paletaColorPreview = document.getElementById('paletaColorPreview');
 
-    // 1. CARGAR PEDIDOS
+    // 1. CARGAR PEDIDOS (CON FILTRO DE ESTATUS)
+    ///showOrder?id=canguro-volador-no-indentificado-2025122602&updated=true
     function cargarPedidos(nombre = '') {
         fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(nombre)}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.pedidos.length > 0) {
+                    const pedidosFiltrados = data.pedidos.filter(p => p.status !== 'Entregada');
+
+                    if (pedidosFiltrados.length === 0) {
+                        resultadosDiv.innerHTML = '<p class="text-center">No hay pedidos pendientes.</p>';
+                        return;
+                    }
+
+                    // Eliminamos <th>ID</th> del encabezado
                     let html = `<table class="table table-hover align-middle">
-                        <thead><tr><th>ID</th><th>Cliente</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Cliente / Pedido</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
                         <tbody>`;
-                    data.pedidos.forEach(p => {
+
+                    pedidosFiltrados.forEach(p => {
+                        const linkDetalle = `showOrder?id=${p.id}`; 
+                        
+                        // Eliminamos el <td> con el ID
                         html += `<tr>
-                            <td>${p.id}</td>
-                            <td>${p.nombre}</td>
+                            <td>
+                                <a href="${linkDetalle}" style="text-decoration: none; color: #0d6efd; font-weight: 500;">
+                                    ${p.nombre}
+                                </a>
+                            </td>
                             <td><span class="badge bg-secondary">${p.status}</span></td>
                             <td class="action-btns text-center">
                                 <button type="button" class="btn btn-sm btn-outline-primary edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
@@ -243,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         }
 
-        // ELIMINAR (Compatible con tu DELETE en PHP)
+        // ELIMINAR
         const btnDelete = e.target.closest('.delete-btn');
         if (btnDelete) {
             const id = btnDelete.getAttribute('data-id');
