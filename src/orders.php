@@ -1,6 +1,5 @@
 <?php
 session_start();
-header('Content-Type: text/html; charset=utf-8');
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: login.php");
     exit;
@@ -24,32 +23,16 @@ require_once 'php/config.php';
         .table-container { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .row-link { transition: background 0.2s; }
         .row-link:hover { background-color: #f8f9fa !important; }
-
-        /* Forzar alineación a la izquierda en el modal de WhatsApp */
-        #waModal .modal-body {
-            text-align: left !important;
-            direction: ltr !important; /* Left-to-Right */
-        }
-
-        #wa-mensaje-pre {
-            text-align: left !important;
-            direction: ltr !important;
-        }
         
+        /* Estilo compacto para pedidos ya entregados */
+        .row-entregada { opacity: 0.6; background-color: #fdfdfd !important; }
+
         .select-status-inline { 
-            font-size: 0.75rem; 
-            padding: 4px 30px 4px 12px; 
-            border-radius: 20px; 
-            font-weight: bold;
-            cursor: pointer;
-            border: 1px solid #ddd;
-            appearance: none;
-            -webkit-appearance: none;
+            font-size: 0.75rem; padding: 4px 30px 4px 12px; border-radius: 20px; 
+            font-weight: bold; cursor: pointer; border: 1px solid #ddd;
+            appearance: none; -webkit-appearance: none;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 10px 10px;
-            transition: all 0.3s;
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px 10px;
         }
 
         .st-recibida { background-color: #e0f7fa; color: #006064; border-color: #b2ebf2; }
@@ -58,32 +41,15 @@ require_once 'php/config.php';
         .st-finalizada { background-color: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
         .st-entregada { background-color: #f5f5f5; color: #424242; border-color: #e0e0e0; }
 
-        .navbar-brand i { transform: translateY(1px); font-size: 1.2rem; }
-
-        /* Centrado perfecto para los botones de acción */
-        .d-flex.justify-content-center.gap-1 .btn, 
+        /* Ajustes de Modal y Botones */
+        #waModal .modal-body { text-align: left !important; direction: ltr !important; }
+        #wa-mensaje-pre { text-align: left !important; direction: ltr !important; }
+        .modal-header .btn-close { margin: 0; position: absolute; left: 15px; top: 20px; }
         .d-flex.justify-content-center.gap-2 .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; padding: 0;
         }
-
-        /* Ajuste específico para el icono de WhatsApp */
-        .bxl-whatsapp {
-            transform: translateY(1px);
-            font-size: 1.1rem;
-        }
-
-        /* Corregir posición de la X en los modales (RTL fix) */
-        .modal-header .btn-close {
-            margin: 0;
-            position: absolute;
-            left: 15px;
-            top: 20px;
-        }
+        .bxl-whatsapp { transform: translateY(1px); font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -91,8 +57,7 @@ require_once 'php/config.php';
 <nav class="navbar navbar-dark bg-dark mb-4 shadow">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="admin.php">
-            <i class="bx bx-arrow-back"></i> 
-            <span>REGRESAR A PANEL DE ADMINISTRADOR</span>
+            <i class="bx bx-arrow-back"></i> <span>REGRESAR A PANEL</span>
         </a>
         <span class="navbar-text">Historial de Pedidos</span>
     </div>
@@ -100,10 +65,17 @@ require_once 'php/config.php';
 
 <div class="container">
     <div class="table-container shadow-sm mb-5">
-        <div class="row mb-4 g-3">
-            <div class="col-md-6">
+        <div class="row mb-4 g-3 align-items-center">
+            <div class="col-md-5">
                 <h4 class="fw-bold mb-0">Base de Datos General</h4>
-                <p class="text-muted small">Gestión integral de registros históricos.</p>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <label class="form-check-label small fw-bold text-primary mb-0" for="soloPendientes" style="cursor:pointer;">
+                        MOSTRAR SOLO PENDIENTES
+                    </label>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="soloPendientes" checked style="cursor:pointer;">
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
                 <select id="filtroEstado" class="form-select">
@@ -115,8 +87,11 @@ require_once 'php/config.php';
                     <option value="Entregada">Entregada</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <input type="text" id="busquedaGlobal" class="form-control" placeholder="Buscar cliente o ID...">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bx bx-search"></i></span>
+                    <input type="text" id="busquedaGlobal" class="form-control" placeholder="Buscar cliente o ID...">
+                </div>
             </div>
         </div>
 
@@ -133,22 +108,6 @@ require_once 'php/config.php';
                 </thead>
                 <tbody id="listaCompleta"></tbody>
             </table>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <div class="modal-body text-center p-5">
-                <div class="mb-4"><i class="bx bx-error-circle text-danger" style="font-size: 80px;"></i></div>
-                <h4 class="fw-bold mb-3">¿Eliminar pedido?</h4>
-                <p class="text-muted mb-4">Se borrarán permanentemente los datos y archivos del servidor.</p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4">Eliminar Ahora</button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -178,6 +137,22 @@ require_once 'php/config.php';
     </div>
 </div>
 
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4"><i class="bx bx-error-circle text-danger" style="font-size: 80px;"></i></div>
+                <h4 class="fw-bold mb-3">¿Eliminar pedido?</h4>
+                <p class="text-muted mb-4">Se borrarán permanentemente los datos y archivos del servidor.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4">Eliminar Ahora</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
     <div id="statusToast" class="toast align-items-center text-white bg-dark border-0 shadow" role="alert">
         <div class="d-flex">
@@ -191,45 +166,34 @@ require_once 'php/config.php';
     const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 
     function generarLinkWhatsApp(p) {
-    if (!p.telefono) return '#'; 
-    const telLimpio = p.telefono.replace(/\D/g, '');
-    if (!telLimpio) return '#';
+        if (!p.telefono) return '#'; 
+        const telLimpio = p.telefono.replace(/\D/g, '');
+        if (!telLimpio) return '#';
 
-    // Detección automática de URL
-    const host = window.location.hostname === 'localhost' 
-                 ? 'http://localhost:8080' 
-                 : 'https://www.tintanegra.mx';
-    
-    const urlPedido = `${host}/showOrder.php?id=${p.id}`;
+        const host = window.location.hostname === 'localhost' 
+                     ? 'http://localhost:8080/tinta_negra' 
+                     : 'https://www.tintanegra.mx';
+        
+        const urlPedido = `${host}/showOrder.php?id=${p.id}`;
+        let costo = parseFloat(p.costo || 0);
+        let anticipo = parseFloat(p.anticipo || 0);
+        let saldo = (p.status === 'Entregada') ? 0 : (costo - anticipo);
 
-    let costo = parseFloat(p.costo || 0);
-    let anticipo = parseFloat(p.anticipo || 0);
-    let statusAct = p.status;
-    let saldo = (statusAct === 'Entregada') ? 0 : (costo - anticipo);
+        let montoTexto = (p.status === 'Entregada') 
+            ? "El pedido ha sido ENTREGADO y liquidado. Muchas gracias por tu confianza." 
+            : (saldo > 0 ? `El saldo pendiente es de ${fmtMoney(saldo)}. Recuerda liquidar al recibir.` : "El pedido ya se encuentra liquidado.");
 
-    let montoTexto = "";
-    if (statusAct === 'Entregada') {
-        montoTexto = "El pedido ha sido ENTREGADO y liquidado. Muchas gracias por tu confianza.";
-    } else if (saldo > 0) {
-        montoTexto = `El saldo pendiente es de ${fmtMoney(saldo)}. Recuerda liquidar al recibir tu pedido.`;
-    } else {
-        montoTexto = "El pedido ya se encuentra liquidado por completo.";
-    }
-    
-    // Redacción limpia y profesional
-    const mensaje = `Hola *${p.nombre}*, te saludamos de Tinta Negra.\n\n` +
-                    `Te informamos que tu pedido con folio *${p.id}* ha cambiado su estado a: *${statusAct.toUpperCase()}*.\n\n` +
-                    `${montoTexto}\n\n` +
-                    `Puedes consultar todos los detalles y el progreso en el siguiente enlace:\n${urlPedido}\n\n` +
-                    `Cualquier duda, quedamos a tus órdenes.`;
+        const mensaje = `Hola *${p.nombre}*, te saludamos de Tinta Negra.\n\n` +
+                        `Te informamos que tu pedido con folio *${p.id}* cambio su estado a: *${p.status.toUpperCase()}*.\n\n` +
+                        `${montoTexto}\n\n` +
+                        `Puedes consultar los detalles aqui:\n${urlPedido}`;
                     
-    return `https://wa.me/52${telLimpio}?text=${encodeURIComponent(mensaje)}`;
-}
+        return `https://wa.me/52${telLimpio}?text=${encodeURIComponent(mensaje)}`;
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         const waModal = new bootstrap.Modal(document.getElementById('waModal'));
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
         let idToDelete = null;
 
         function getStatusClass(status) {
@@ -244,8 +208,9 @@ require_once 'php/config.php';
         }
 
         function cargarTodo() {
-            const busqueda = document.getElementById('busquedaGlobal').value;
+            const busqueda = document.getElementById('busquedaGlobal').value.toLowerCase();
             const estadoFiltro = document.getElementById('filtroEstado').value;
+            const soloPendientes = document.getElementById('soloPendientes').checked;
 
             fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(busqueda)}&todo=true`)
             .then(res => res.json())
@@ -254,7 +219,15 @@ require_once 'php/config.php';
                 tbody.innerHTML = '';
 
                 if (data.success && data.pedidos.length > 0) {
-                    const filtrados = data.pedidos.filter(p => estadoFiltro === "" || p.status === estadoFiltro);
+                    const filtrados = data.pedidos.filter(p => {
+                        const coincideEstado = estadoFiltro === "" || p.status === estadoFiltro;
+                        const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda) || p.id.toLowerCase().includes(busqueda);
+                        
+                        // Si el interruptor esta activo, filtramos lo entregado (a menos que el usuario busque por nombre)
+                        const cumpleVista = soloPendientes ? (p.status !== 'Entregada') : true;
+
+                        return coincideEstado && coincideBusqueda && cumpleVista;
+                    });
 
                     filtrados.forEach(p => {
                         let costo = parseFloat(p.costo || 0);
@@ -264,70 +237,47 @@ require_once 'php/config.php';
 
                         const linkWS = generarLinkWhatsApp(p);
                         const wsButton = (linkWS !== '#') 
-                            ? `<button type="button" class="btn btn-sm btn-success border-0 btn-wa-preview" 
-                                data-nombre="${p.nombre}" data-tel="${p.telefono}" data-link="${linkWS}">
-                                <i class="bx bxl-whatsapp"></i></button>`
+                            ? `<button type="button" class="btn btn-sm btn-success border-0 btn-wa-preview" data-nombre="${p.nombre}" data-tel="${p.telefono}" data-link="${linkWS}"><i class="bx bxl-whatsapp"></i></button>`
                             : `<button class="btn btn-sm btn-light border-0 text-muted" disabled><i class="bx bxl-whatsapp"></i></button>`;
 
                         const tr = document.createElement('tr');
-                        tr.className = 'row-link';
+                        tr.className = `row-link ${esEntregado ? 'row-entregada' : ''}`;
                         tr.innerHTML = `
-                            <td>
-                                <div class="fw-bold">${p.nombre}</div>
-                                <div class="small text-muted">ID: ${p.id}</div>
-                            </td>
+                            <td><div class="fw-bold">${p.nombre}</div><div class="small text-muted">ID: ${p.id}</div></td>
                             <td class="small">${p.fechaEntrega}</td>
-                            <td>
-                                <div class="small text-muted">${fmtMoney(costo)}</div>
-                                <div class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">
-                                    ${esEntregado ? '<i class="bx bx-check-double"></i> ' : ''}${fmtMoney(saldo)}
-                                </div>
-                            </td>
-                            <td>
-                                <select class="form-select form-select-sm select-status-inline ${getStatusClass(p.status)}" data-id="${p.id}">
-                                    <option value="Recibida" ${p.status === 'Recibida' ? 'selected' : ''}>RECIBIDA</option>
-                                    <option value="Anticipo recibido" ${p.status === 'Anticipo recibido' ? 'selected' : ''}>ANTICIPO RECIBIDO</option>
-                                    <option value="En produccion" ${p.status === 'En produccion' ? 'selected' : ''}>EN PRODUCCIÓN</option>
-                                    <option value="Finalizada" ${p.status === 'Finalizada' ? 'selected' : ''}>FINALIZADA</option>
-                                    <option value="Entregada" ${p.status === 'Entregada' ? 'selected' : ''}>ENTREGADA</option>
-                                </select>
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    ${wsButton}
-                                    <a href="showOrder.php?id=${p.id}" class="btn btn-sm btn-light border"><i class="bx bx-show"></i></a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-order-btn" data-id="${p.id}"><i class="bx bx-trash"></i></button>
-                                </div>
-                            </td>
+                            <td><div class="small text-muted">${fmtMoney(costo)}</div><div class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">${fmtMoney(saldo)}</div></td>
+                            <td><select class="form-select form-select-sm select-status-inline ${getStatusClass(p.status)}" data-id="${p.id}">
+                                <option value="Recibida" ${p.status === 'Recibida' ? 'selected' : ''}>RECIBIDA</option>
+                                <option value="Anticipo recibido" ${p.status === 'Anticipo recibido' ? 'selected' : ''}>ANTICIPO RECIBIDO</option>
+                                <option value="En produccion" ${p.status === 'En produccion' ? 'selected' : ''}>EN PRODUCCIÓN</option>
+                                <option value="Finalizada" ${p.status === 'Finalizada' ? 'selected' : ''}>FINALIZADA</option>
+                                <option value="Entregada" ${p.status === 'Entregada' ? 'selected' : ''}>ENTREGADA</option>
+                            </select></td>
+                            <td class="text-center"><div class="d-flex justify-content-center gap-2">${wsButton}<a href="showOrder.php?id=${p.id}" class="btn btn-sm btn-light border"><i class="bx bx-show"></i></a><button type="button" class="btn btn-sm btn-outline-danger delete-order-btn" data-id="${p.id}"><i class="bx bx-trash"></i></button></div></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No hay registros.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Sin registros.</td></tr>';
                 }
             });
         }
 
+        // WhatsApp Modal Logic
         document.addEventListener('click', function(e) {
-            // WhatsApp Preview & Edit
             const btnWA = e.target.closest('.btn-wa-preview');
             if (btnWA) {
                 const nombre = btnWA.getAttribute('data-nombre');
                 const telefono = btnWA.getAttribute('data-tel');
                 const link = btnWA.getAttribute('data-link');
                 const urlObj = new URL(link);
-                const mensajeOriginal = decodeURIComponent(urlObj.searchParams.get("text"));
-
                 document.getElementById('wa-destinatario').innerText = `${nombre} (${telefono})`;
-                document.getElementById('wa-mensaje-pre').value = mensajeOriginal;
+                document.getElementById('wa-mensaje-pre').value = decodeURIComponent(urlObj.searchParams.get("text"));
                 document.getElementById('wa-confirmar-link').dataset.tel = telefono.replace(/\D/g, '');
                 waModal.show();
             }
-
-            // Delete Modal
-            const btnDel = e.target.closest('.delete-order-btn');
-            if (btnDel) {
-                idToDelete = btnDel.dataset.id;
+            if (e.target.closest('.delete-order-btn')) {
+                idToDelete = e.target.closest('.delete-order-btn').dataset.id;
                 deleteModal.show();
             }
         });
@@ -336,24 +286,14 @@ require_once 'php/config.php';
             e.preventDefault();
             const tel = this.dataset.tel;
             const mensajeFinal = document.getElementById('wa-mensaje-pre').value;
-            
-            // Forzamos la limpieza de carácteres antes de codificar
-            const cleanMsg = unescape(encodeURIComponent(mensajeFinal)); 
-            // Si la línea anterior falla, usa simplemente el mensajeFinal, 
-            // pero asegúrate de que el encodeURIComponent esté presente:
-            
-            const finalURL = `https://wa.me/52${tel}?text=${encodeURIComponent(mensajeFinal)}`;
-            
-            window.open(finalURL, '_blank');
+            window.open(`https://wa.me/52${tel}?text=${encodeURIComponent(mensajeFinal)}`, '_blank');
             waModal.hide();
         });
 
-        function showToast(msg, color = 'bg-dark') {
-            const toastEl = document.getElementById('statusToast');
-            document.getElementById('toastMessage').innerText = msg;
-            toastEl.className = `toast align-items-center text-white ${color} border-0 shadow`;
-            new bootstrap.Toast(toastEl).show();
-        }
+        // Event Listeners
+        document.getElementById('busquedaGlobal').addEventListener('input', cargarTodo);
+        document.getElementById('filtroEstado').addEventListener('change', cargarTodo);
+        document.getElementById('soloPendientes').addEventListener('change', cargarTodo);
 
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('select-status-inline')) {
@@ -361,38 +301,14 @@ require_once 'php/config.php';
                 const params = new URLSearchParams();
                 params.append('id', select.dataset.id);
                 params.append('status', select.value);
-
-                fetch('php/updateStatus.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params.toString()
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast("¡Estado actualizado!", "bg-success");
-                        cargarTodo();
-                    }
-                });
+                fetch('php/updateStatus.php', { method: 'POST', body: params }).then(() => cargarTodo());
             }
         });
 
-        confirmDeleteBtn.addEventListener('click', function() {
-            if (idToDelete) {
-                fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        deleteModal.hide();
-                        showToast("Pedido eliminado correctamente", "bg-danger");
-                        cargarTodo();
-                    }
-                });
-            }
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' }).then(() => { deleteModal.hide(); cargarTodo(); });
         });
 
-        document.getElementById('busquedaGlobal').addEventListener('input', cargarTodo);
-        document.getElementById('filtroEstado').addEventListener('change', cargarTodo);
         window.onload = cargarTodo;
     });
 </script>
