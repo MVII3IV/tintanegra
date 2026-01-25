@@ -12,7 +12,7 @@ require_once 'php/config.php';
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tinta Negra - Gestión de Pedidos y Panel Administrativo</title>
+    <title>Tinta Negra - Panel de Administración</title>
 
     <link rel="stylesheet" href="assets/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="assets/css/boxicons.min.css" />
@@ -23,16 +23,11 @@ require_once 'php/config.php';
 
     <style>
         body { background-color: #f8f9fa; }
-        .admin-nav { shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .stat-card { border-radius: 12px; border: none; border-start: 5px solid; transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-3px); }
         .image-preview-container { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; background: #fff; min-height: 50px; }
         .image-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
         .section-title-admin { font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
-        .filter-info { font-size: 0.8rem; color: #666; margin-bottom: 10px; display: block; }
-        
-        /* Estilos para la tabla tipo tarjeta */
-        .table-responsive { background: transparent; padding: 0; box-shadow: none; }
         .table-container { background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
     </style>
 </head>
@@ -44,9 +39,7 @@ require_once 'php/config.php';
             <i class="bx bxs-dashboard me-2"></i> PANEL DE ADMINISTRADOR
         </a>
         <div class="d-flex gap-2">
-            <button onclick="location.reload()" class="btn btn-outline-light btn-sm">
-                <i class="bx bx-refresh"></i>
-            </button>
+            <button onclick="location.reload()" class="btn btn-outline-light btn-sm"><i class="bx bx-refresh"></i></button>
             <a href="php/logout.php" class="btn btn-danger btn-sm">Cerrar Sesión</a>
         </div>
     </div>
@@ -85,18 +78,18 @@ require_once 'php/config.php';
         <div class="row mb-3 align-items-center">
             <div class="col-md-8">
                 <h5 class="mb-0 fw-bold">Pedidos Activos</h5>
-                <span class="filter-info">* Trabajos pendientes de entrega.</span>
+                <span class="text-muted small">* Trabajos pendientes de entrega.</span>
             </div>
             <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="bx bx-search"></i></span>
-                    <input type="text" id="buscadorNombre" class="form-control" placeholder="Buscar cliente...">
+                <div class="input-group shadow-sm">
+                    <input type="text" id="buscadorNombre" class="form-control border-end-0" placeholder="Buscar cliente..." style="border-radius: 8px 0 0 8px;">
+                    <span class="input-group-text bg-white border-start-0" style="border-radius: 0 8px 8px 0;">
+                        <i class="bx bx-search text-muted"></i>
+                    </span>
                 </div>
             </div>
         </div>
-        <div id="resultados">
-            <p class="text-center py-4">Cargando pedidos...</p>
-        </div>
+        <div id="resultados"><p class="text-center py-4">Cargando pedidos...</p></div>
     </div>
 
     <form id="pedidoForm" action="php/createOrder.php" method="POST" enctype="multipart/form-data">
@@ -104,12 +97,10 @@ require_once 'php/config.php';
 
         <div class="card mb-4 p-4 shadow-sm border-0" style="border-radius: 15px;">
             <div class="section-title-admin text-center" id="formHeader">Nuevo Pedido</div>
-            
             <div class="mb-3">
                 <label for="nombrePedido" class="form-label fw-bold">Nombre del Pedido / Cliente</label>
                 <input type="text" class="form-control" id="nombrePedido" name="nombre" required>
             </div>
-
             <div class="row g-3">
                 <div class="col-md-4 mb-3">
                     <label for="status" class="form-label fw-bold">Estado</label>
@@ -130,7 +121,6 @@ require_once 'php/config.php';
                     <input type="date" class="form-control" id="fechaEntrega" name="fechaEntrega" required>
                 </div>
             </div>
-
             <div class="row g-3">
                 <div class="col-md-6 mb-3">
                     <label for="costo" class="form-label fw-bold">Costo Total ($)</label>
@@ -138,14 +128,17 @@ require_once 'php/config.php';
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="anticipo" class="form-label fw-bold">Anticipo Recibido ($)</label>
-                    <input type="number" step="0.01" class="form-control" id="anticipo" name="anticipo" value="0.00">
+                    <input type="number" step="0.01" class="form-control" id="anticipo" name="anticipo" required>
                 </div>
             </div>
         </div> 
 
         <div class="card mb-4 p-4 shadow-sm border-0" style="border-radius: 15px;">
             <div class="d-flex align-items-center justify-content-between mb-4">
-                <h5 class="mb-0 fw-bold">Detalle de Tallas</h5>
+                <div>
+                    <h5 class="mb-0 fw-bold">Detalle de Tallas</h5>
+                    <small class="text-muted">Total acumulado: <span id="totalPiezasAdmin" class="fw-bold text-primary">0</span> piezas</small>
+                </div>
                 <button type="button" id="addTalla" class="btn btn-primary btn-sm"><i class="bx bx-plus"></i> Añadir</button>
             </div>
             <div id="tallasContainer"></div>
@@ -185,88 +178,85 @@ document.addEventListener('DOMContentLoaded', function() {
     const imagenesPreview = document.getElementById('imagenesPreview');
     const paletaColorPreview = document.getElementById('paletaColorPreview');
 
-    const inputInicio = document.getElementById('fechaInicio');
-    const inputEntrega = document.getElementById('fechaEntrega');
+    // 1. CONTEO EN TIEMPO REAL
+    function calcularTotalPiezas() {
+        const inputs = tallasContainer.querySelectorAll('input[name="cantidad[]"]');
+        let total = 0;
+        inputs.forEach(input => total += parseInt(input.value) || 0);
+        document.getElementById('totalPiezasAdmin').innerText = total;
+    }
 
-    // Validación de fechas
-    inputInicio.addEventListener('change', function() {
-        inputEntrega.min = this.value;
-        if (inputEntrega.value && inputEntrega.value < this.value) {
-            inputEntrega.value = this.value;
+    function addTallaEntry(talla = '', cantidad = 1, color = '#000000') {
+        const div = document.createElement('div');
+        div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="talla[]" placeholder="Ej: L" value="${talla}">
+            <input type="number" class="form-control" name="cantidad[]" value="${cantidad}" min="0" style="width: 80px;">
+            <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
+            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
+        `;
+        tallasContainer.appendChild(div);
+        div.querySelector('input[name="cantidad[]"]').addEventListener('input', calcularTotalPiezas);
+        calcularTotalPiezas();
+    }
+
+    document.getElementById('addTalla').addEventListener('click', () => addTallaEntry());
+    tallasContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-talla')) {
+            e.target.closest('.talla-entry').remove();
+            calcularTotalPiezas();
         }
     });
 
+    // 2. GESTIÓN DE PEDIDOS (CARGA Y FILTROS)
     function cargarPedidos(nombre = '') {
         fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(nombre)}`)
             .then(res => res.json())
             .then(data => {
                 let stats = { produccion: 0, entregaHoy: 0, porCobrar: 0, listos: 0 };
-                
-                // CORRECCIÓN DE FECHA LOCAL
                 const ahora = new Date();
-                const anio = ahora.getFullYear();
-                const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-                const dia = String(ahora.getDate()).padStart(2, '0');
-                const hoy = `${anio}-${mes}-${dia}`; // Formato exacto YYYY-MM-DD local
+                const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
                 if (data.success && data.pedidos.length > 0) {
-                    const pedidosFiltrados = data.pedidos.filter(p => p.status !== 'Entregada');
-
-                    if (pedidosFiltrados.length === 0) {
-                        resultadosDiv.innerHTML = '<p class="text-center py-4">No hay pedidos pendientes.</p>';
-                        actualizarEstadisticas(stats);
-                        return;
+                    const filtrados = data.pedidos.filter(p => p.status !== 'Entregada');
+                    if (filtrados.length === 0) {
+                        resultadosDiv.innerHTML = '<p class="text-center py-4">Sin pedidos pendientes.</p>';
+                        actualizarEstadisticas(stats); return;
                     }
 
-                    let html = `<div class="table-responsive">
-                        <table class="table table-hover align-middle" style="min-width: 800px; border-collapse: separate; border-spacing: 0 10px;">
-                            <thead>
-                                <tr class="text-muted small text-uppercase">
-                                    <th style="width: 30%; padding-left: 15px;">Cliente</th>
-                                    <th style="width: 15%;">Entrega</th>
-                                    <th style="width: 15%;">Saldo</th>
-                                    <th style="width: 20%;">Estado</th>
-                                    <th style="width: 20%;" class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
+                    let html = `<div class="table-responsive"><table class="table table-hover align-middle" style="min-width: 800px; border-collapse: separate; border-spacing: 0 10px;">
+                        <thead><tr class="text-muted small text-uppercase">
+                            <th style="width: 30%; padding-left: 15px;">Cliente</th>
+                            <th style="width: 15%;">Entrega</th>
+                            <th style="width: 15%;">Saldo</th>
+                            <th style="width: 20%;">Estado</th>
+                            <th style="width: 20%;" class="text-center">Acciones</th>
+                        </tr></thead><tbody>`;
 
-                    pedidosFiltrados.forEach(p => {
-                        // Cálculos de estadísticas
+                    filtrados.forEach(p => {
                         if (p.status === 'En produccion') stats.produccion++;
                         if (p.status === 'Finalizada') stats.listos++;
                         if (p.fechaEntrega === hoy) stats.entregaHoy++;
-                        
-                        const costo = parseFloat(p.costo || 0);
-                        const anticipo = parseFloat(p.anticipo || 0);
-                        const saldo = costo - anticipo;
+                        const saldo = parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0);
                         if (saldo > 0) stats.porCobrar += saldo;
 
-                        let badgeClass = 'bg-light text-dark border';
-                        if (p.status === 'Recibida') badgeClass = 'bg-info text-dark';
-                        if (p.status === 'Anticipo recibido') badgeClass = 'bg-primary text-white';
-                        if (p.status === 'En produccion') badgeClass = 'bg-warning text-dark';
-                        if (p.status === 'Finalizada') badgeClass = 'bg-success text-white';
+                        let badge = 'bg-light text-dark border';
+                        if (p.status === 'Recibida') badge = 'bg-info text-dark';
+                        if (p.status === 'Anticipo recibido') badge = 'bg-primary text-white';
+                        if (p.status === 'En produccion') badge = 'bg-warning text-dark';
+                        if (p.status === 'Finalizada') badge = 'bg-success text-white';
 
-                        html += `
-                        <tr style="background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 10px;">
-                            <td style="padding-left: 15px; border-radius: 10px 0 0 10px;">
-                                <a href="showOrder.php?id=${p.id}" class="fw-bold text-decoration-none text-dark">${p.nombre}</a>
-                            </td>
+                        html += `<tr style="background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 10px;">
+                            <td style="padding-left: 15px; border-radius: 10px 0 0 10px;"><a href="showOrder.php?id=${p.id}" class="fw-bold text-decoration-none text-dark">${p.nombre}</a></td>
                             <td class="small text-muted">${p.fechaEntrega}</td>
                             <td class="fw-bold ${saldo > 0 ? 'text-danger' : 'text-success'}">$${saldo.toFixed(2)}</td>
-                            <td><span class="badge rounded-pill ${badgeClass}">${p.status.toUpperCase()}</span></td>
-                            <td class="text-center" style="border-radius: 0 10px 10px 0;">
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <button type="button" class="btn btn-sm btn-light border edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
-                                    <button type="button" class="btn btn-sm btn-light border delete-btn" data-id="${p.id}"><i class="bx bx-trash text-danger"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
+                            <td><span class="badge rounded-pill ${badge}">${p.status.toUpperCase()}</span></td>
+                            <td class="text-center" style="border-radius: 0 10px 10px 0;"><div class="d-flex gap-2 justify-content-center">
+                                <button type="button" class="btn btn-sm btn-light border edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
+                                <button type="button" class="btn btn-sm btn-light border delete-btn" data-id="${p.id}"><i class="bx bx-trash text-danger"></i></button>
+                            </div></td></tr>`;
                     });
-
-                    html += `</tbody></table></div>`;
-                    resultadosDiv.innerHTML = html;
+                    resultadosDiv.innerHTML = html + `</tbody></table></div>`;
                     actualizarEstadisticas(stats);
                 } else {
                     resultadosDiv.innerHTML = '<p class="text-center py-4">Sin registros.</p>';
@@ -282,71 +272,43 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('stat-cobro').innerText = '$' + s.porCobrar.toLocaleString('es-MX', {minimumFractionDigits:2});
     }
 
-    function addTallaEntry(talla = '', cantidad = 1, color = '#000000') {
-        const div = document.createElement('div');
-        div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
-        div.innerHTML = `
-            <input type="text" class="form-control" name="talla[]" placeholder="Ej: L" value="${talla}">
-            <input type="number" class="form-control" name="cantidad[]" value="${cantidad}" min="1" style="width: 80px;">
-            <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
-            <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>
-        `;
-        tallasContainer.appendChild(div);
-    }
-
-    document.getElementById('addTalla').addEventListener('click', () => addTallaEntry());
-    tallasContainer.addEventListener('click', (e) => {
-        if (e.target.closest('.remove-talla')) e.target.closest('.talla-entry').remove();
-    });
-
-    // Carga inicial
-    cargarPedidos();
-    addTallaEntry();
-    buscador.addEventListener('input', (e) => cargarPedidos(e.target.value));
-
-    // EDITAR Y ELIMINAR
+    // 3. EDITAR Y ELIMINAR
     document.addEventListener('click', function(e) {
         const btnEdit = e.target.closest('.edit-btn');
         if (btnEdit) {
             const id = btnEdit.getAttribute('data-id');
-            fetch(`php/editor.php?id=${id}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const p = data.pedido;
-                        pedidoIdField.value = p.id;
-                        document.getElementById('nombrePedido').value = p.nombre;
-                        document.getElementById('status').value = p.status;
-                        document.getElementById('fechaInicio').value = p.fechaInicio;
-                        document.getElementById('fechaEntrega').value = p.fechaEntrega;
-                        document.getElementById('costo').value = p.costo;
-                        document.getElementById('anticipo').value = p.anticipo;
-
-                        tallasContainer.innerHTML = '';
-                        (p.tallas || []).forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
-                        
-                        imagenesPreview.innerHTML = (p.imagenes || []).map(r => `<div class="image-preview"><img src="${r}"></div>`).join('');
-                        paletaColorPreview.innerHTML = p.paletaColor ? `<div class="image-preview"><img src="${p.paletaColor}"></div>` : '';
-
-                        formHeader.innerText = "Editando Pedido #" + p.id;
-                        submitButton.innerText = "Actualizar Pedido";
-                        window.scrollTo({ top: document.getElementById('pedidoForm').offsetTop - 20, behavior: 'smooth' });
-                    }
-                });
+            fetch(`php/editor.php?id=${id}`).then(res => res.json()).then(data => {
+                if (data.success) {
+                    const p = data.pedido;
+                    pedidoIdField.value = p.id;
+                    document.getElementById('nombrePedido').value = p.nombre;
+                    document.getElementById('status').value = p.status;
+                    document.getElementById('fechaInicio').value = p.fechaInicio;
+                    document.getElementById('fechaEntrega').value = p.fechaEntrega;
+                    document.getElementById('costo').value = p.costo;
+                    document.getElementById('anticipo').value = p.anticipo;
+                    tallasContainer.innerHTML = '';
+                    (p.tallas || []).forEach(t => addTallaEntry(t.talla, t.cantidad, t.color));
+                    calcularTotalPiezas();
+                    imagenesPreview.innerHTML = (p.imagenes || []).map(r => `<div class="image-preview"><img src="${r}"></div>`).join('');
+                    paletaColorPreview.innerHTML = p.paletaColor ? `<div class="image-preview"><img src="${p.paletaColor}"></div>` : '';
+                    formHeader.innerText = "Editando Pedido #" + p.id;
+                    submitButton.innerText = "Actualizar Pedido";
+                    window.scrollTo({ top: document.getElementById('pedidoForm').offsetTop - 20, behavior: 'smooth' });
+                }
+            });
         }
-
-        const btnDelete = e.target.closest('.delete-btn');
-        if (btnDelete) {
-            const id = btnDelete.getAttribute('data-id');
-            if (confirm(`¿Eliminar pedido #${id}?`)) {
-                fetch(`php/deleteOrder.php?id=${id}`, { method: 'DELETE' })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) { cargarPedidos(buscador.value); if(pedidoIdField.value == id) location.reload(); }
-                    });
-            }
+        const btnDel = e.target.closest('.delete-btn');
+        if (btnDel && confirm(`¿Eliminar pedido #${btnDel.getAttribute('data-id')}?`)) {
+            fetch(`php/deleteOrder.php?id=${btnDel.getAttribute('data-id')}`, { method: 'DELETE' })
+                .then(res => res.json()).then(data => { if (data.success) cargarPedidos(buscador.value); });
         }
     });
+
+    // Iniciar
+    cargarPedidos();
+    addTallaEntry();
+    buscador.addEventListener('input', (e) => cargarPedidos(e.target.value));
 });
 </script>
 </body>

@@ -139,14 +139,27 @@ session_start();
     </div>
 
     <div class="card-soft p-4 border shadow-sm mb-4">
-        <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0 text-center">
-                <thead class="table-light"><tr><th>Talla</th><th>Cantidad</th><th>Color</th></tr></thead>
-                <tbody id="pedido-tallas"></tbody>
-            </table>
-        </div>
+    <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 text-center">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 40%;">Talla</th>
+                    <th style="width: 30%;">Cantidad</th>
+                    <th style="width: 30%;">Color</th>
+                </tr>
+            </thead>
+            <tbody id="pedido-tallas"></tbody>
+            <tfoot class="table-light border-top">
+                <tr>
+                    <td class="text-center fw-bold">Total piezas</td>
+                    <td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
+</div>
 </div>
 
 <div class="modal fade" id="modalPaleta" tabindex="-1" aria-hidden="true">
@@ -224,14 +237,23 @@ session_start();
                 document.getElementById("barra-pago").style.width = pct + "%";
             }
 
-            // 4. TABLA TALLAS
+            // 4. TABLA TALLAS CON SUMATORIA
             const tbody = document.getElementById("pedido-tallas");
+            const totalDisplay = document.getElementById("total-piezas");
             tbody.innerHTML = "";
+            let totalP = 0; // Variable para el conteo
+
             (p.tallas || []).forEach(t => {
+                const cant = parseInt(t.cantidad) || 0;
+                totalP += cant; // Sumar cada fila
+
                 const tr = document.createElement("tr");
-                tr.innerHTML = `<td>${t.talla}</td><td>${t.cantidad}</td><td><span class="color-chip shadow-sm" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:2px solid white;"></span></td>`;
+                tr.innerHTML = `<td>${t.talla}</td><td>${cant}</td><td><span class="color-chip shadow-sm" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:2px solid white;"></span></td>`;
                 tbody.appendChild(tr);
             });
+            
+            // Mostrar el total sumado
+            if(totalDisplay) totalDisplay.textContent = totalP;
 
             // 5. CARRUSEL Y VISOR
             const wrap = document.getElementById("pedido-imagenes");

@@ -1,37 +1,38 @@
 <?php
 require_once 'config.php';
-require_once 'id-generator.php'; // Incluye el nuevo generador de ID
+require_once 'id-generator.php'; 
 
-// Directorios de subida
+// 1. CONFIGURACIÓN DE DIRECTORIOS
 $uploadDir = '../uploads/';
 $colorPalettesDir = '../uploads/color_palettes/';
 
-// Asegurarse de que los directorios existan
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
-}
-if (!is_dir($colorPalettesDir)) {
-    mkdir($colorPalettesDir, 0777, true);
+if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+if (!is_dir($colorPalettesDir)) mkdir($colorPalettesDir, 0777, true);
+
+// 2. GESTIÓN DE IDENTIFICADOR (Crucial para el nombre de archivos)
+$pedidoId = $_POST['pedido_id'] ?? null;
+$esEdicion = !empty($pedidoId);
+
+if (!$esEdicion) {
+    // Si es nuevo, generamos el ID de una vez para usarlo en los nombres de archivos
+    $pedidoId = generateFunnyOrderId();
 }
 
-// Inicializar variables
-$pedidoId = $_POST['pedido_id'] ?? null; // Obtener el ID del pedido si existe
+// 3. RECUPERAR DATOS PREVIOS (Si es edición, para limpieza de archivos)
 $currentPedidoImages = [];
 $currentPaletaColorPath = null;
 
-// Si estamos editando, cargar las imágenes actuales para posible eliminación
-if ($pedidoId) {
+if ($esEdicion) {
     $stmt = $pdo->prepare("SELECT imagenes, paletaColor FROM pedidos WHERE id = :id");
     $stmt->execute([':id' => $pedidoId]);
-    $existingPedido = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($existingPedido) {
-        $currentPedidoImages = json_decode($existingPedido['imagenes'], true) ?? [];
-        $currentPaletaColorPath = $existingPedido['paletaColor'];
+    $existing = $stmt->fetch();
+    if ($existing) {
+        $currentPedidoImages = json_decode($existing['imagenes'], true) ?? [];
+        $currentPaletaColorPath = $existing['paletaColor'];
     }
 }
 
-
-// Procesar tallas
+// 4. PROCESAR TALLAS
 $tallas = [];
 if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     foreach ($_POST['talla'] as $i => $t) {
@@ -45,119 +46,93 @@ if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     }
 }
 
-// Procesar imágenes del pedido (múltiples)
+// 5. PROCESAR IMÁGENES DEL DISEÑO
 $imagenes = [];
 $newImagesUploaded = false;
+
 if (isset($_FILES['imagenes']) && is_array($_FILES['imagenes']['tmp_name'])) {
     foreach ($_FILES['imagenes']['tmp_name'] as $i => $tmp_name) {
         if (!empty($tmp_name) && $_FILES['imagenes']['error'][$i] == UPLOAD_ERR_OK) {
-            $fileName = time().'_'.uniqid().'_'.basename($_FILES['imagenes']['name'][$i]); // Añadir uniqid para mayor unicidad
+            
+            $ext = pathinfo($_FILES['imagenes']['name'][$i], PATHINFO_EXTENSION);
+            // Nombre profesional: ID_TIMESTAMP_RANDOM.EXT
+            $fileName = $pedidoId . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $ext;
+            
             $targetFilePath = $uploadDir . $fileName;
             if (move_uploaded_file($tmp_name, $targetFilePath)) {
-                $imagenes[] = $targetFilePath;
+                $imagenes[] = "uploads/" . $fileName; // Guardamos ruta limpia
                 $newImagesUploaded = true;
             }
         }
     }
 }
 
-// Si se subieron nuevas imágenes para el pedido, eliminar las antiguas
-if ($newImagesUploaded && $pedidoId && !empty($currentPedidoImages)) {
+// Lógica de reemplazo de imágenes
+if ($newImagesUploaded && $esEdicion) {
     foreach ($currentPedidoImages as $oldImage) {
-        if (file_exists($oldImage)) {
-            unlink($oldImage);
-        }
+        $fullOldPath = __DIR__ . "/../" . ltrim($oldImage, './');
+        if (file_exists($fullOldPath)) unlink($fullOldPath);
     }
-}
-// Si no se subieron nuevas imágenes, pero estamos editando, mantenemos las existentes
-if (!$newImagesUploaded && $pedidoId) {
+} elseif (!$newImagesUploaded && $esEdicion) {
     $imagenes = $currentPedidoImages;
 }
 
-
-// Procesar imagen de paleta de colores (una sola)
+// 6. PROCESAR PALETA DE COLORES
 $paletaColorPath = null;
-$newPaletaColorUploaded = false;
+$newPaletaUploaded = false;
+
 if (isset($_FILES['paletaColor']) && $_FILES['paletaColor']['error'] == UPLOAD_ERR_OK) {
-    $fileName = time().'_'.uniqid().'_'.basename($_FILES['paletaColor']['name']); // Añadir uniqid
+    $ext = pathinfo($_FILES['paletaColor']['name'], PATHINFO_EXTENSION);
+    $fileName = "PALETA_" . $pedidoId . "_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $ext;
+    
     $targetFilePath = $colorPalettesDir . $fileName;
     if (move_uploaded_file($_FILES['paletaColor']['tmp_name'], $targetFilePath)) {
-        $paletaColorPath = $targetFilePath;
-        $newPaletaColorUploaded = true;
+        $paletaColorPath = "uploads/color_palettes/" . $fileName;
+        $newPaletaUploaded = true;
     }
 }
 
-// Si se subió una nueva imagen de paleta, eliminar la antigua
-if ($newPaletaColorUploaded && $pedidoId && $currentPaletaColorPath && file_exists($currentPaletaColorPath)) {
-    unlink($currentPaletaColorPath);
-}
-// Si no se subió una nueva paleta, pero estamos editando, mantenemos la existente
-if (!$newPaletaColorUploaded && $pedidoId) {
+// Lógica de reemplazo de paleta
+if ($newPaletaUploaded && $esEdicion && $currentPaletaColorPath) {
+    $fullOldPaleta = __DIR__ . "/../" . ltrim($currentPaletaColorPath, './');
+    if (file_exists($fullOldPaleta)) unlink($fullOldPaleta);
+} elseif (!$newPaletaUploaded && $esEdicion) {
     $paletaColorPath = $currentPaletaColorPath;
 }
 
-
+// 7. GUARDAR EN BASE DE DATOS
 try {
-    if ($pedidoId) {
-        // Modo edición: UPDATE
-        $stmt = $pdo->prepare("UPDATE pedidos SET
-            nombre = :nombre,
-            status = :status,
-            fechaInicio = :fechaInicio,
-            fechaEntrega = :fechaEntrega,
-            costo = :costo,
-            anticipo = :anticipo,
-            tallas = :tallas,
-            imagenes = :imagenes,
-            paletaColor = :paletaColor
-            WHERE id = :id");
+    $params = [
+        ':nombre'       => htmlspecialchars($_POST['nombre']),
+        ':status'       => htmlspecialchars($_POST['status']),
+        ':fechaInicio'  => $_POST['fechaInicio'],
+        ':fechaEntrega' => $_POST['fechaEntrega'],
+        ':costo'        => (float)$_POST['costo'],
+        ':anticipo'     => (float)$_POST['anticipo'],
+        ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE),
+        ':imagenes'     => json_encode($imagenes, JSON_UNESCAPED_UNICODE),
+        ':paletaColor'  => $paletaColorPath,
+        ':id'           => $pedidoId
+    ];
 
-        $stmt->execute([
-            ':nombre'       => htmlspecialchars($_POST['nombre']),
-            ':status'       => htmlspecialchars($_POST['status']),
-            ':fechaInicio'  => $_POST['fechaInicio'],
-            ':fechaEntrega' => $_POST['fechaEntrega'],
-            ':costo'        => (float)$_POST['costo'],
-            ':anticipo'     => (float)$_POST['anticipo'],
-            ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE),
-            ':imagenes'     => json_encode($imagenes, JSON_UNESCAPED_UNICODE),
-            ':paletaColor'  => $paletaColorPath,
-            ':id'           => $pedidoId
-        ]);
-
-        header("Location: ../showOrder?id=$pedidoId&updated=true");
-        exit;
-
+    if ($esEdicion) {
+        $sql = "UPDATE pedidos SET nombre=:nombre, status=:status, fechaInicio=:fechaInicio, 
+                fechaEntrega=:fechaEntrega, costo=:costo, anticipo=:anticipo, tallas=:tallas, 
+                imagenes=:imagenes, paletaColor=:paletaColor WHERE id=:id";
     } else {
-        // Modo creación: INSERT
-        $newPedidoId = generateFunnyOrderId(); // Genera el nuevo ID único
-
-        $stmt = $pdo->prepare("INSERT INTO pedidos
-            (id, nombre, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, imagenes, paletaColor)
-            VALUES (:id, :nombre, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :imagenes, :paletaColor)");
-
-        $stmt->execute([
-            ':id'           => $newPedidoId, // Usa el nuevo ID
-            ':nombre'       => htmlspecialchars($_POST['nombre']),
-            ':status'       => htmlspecialchars($_POST['status']),
-            ':fechaInicio'  => $_POST['fechaInicio'],
-            ':fechaEntrega' => $_POST['fechaEntrega'],
-            ':costo'        => (float)$_POST['costo'],
-            ':anticipo'     => (float)$_POST['anticipo'],
-            ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE),
-            ':imagenes'     => json_encode($imagenes, JSON_UNESCAPED_UNICODE),
-            ':paletaColor'  => $paletaColorPath
-        ]);
-
-        // Ya no necesitas lastInsertId() porque generamos el ID
-        header("Location: ../showOrder?id=$newPedidoId&created=true");
-        exit;
+        $sql = "INSERT INTO pedidos (id, nombre, status, fechaInicio, fechaEntrega, costo, anticipo, tallas, imagenes, paletaColor) 
+                VALUES (:id, :nombre, :status, :fechaInicio, :fechaEntrega, :costo, :anticipo, :tallas, :imagenes, :paletaColor)";
     }
 
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    // Redirección final
+    $url = "../showOrder?id=" . $pedidoId . ($esEdicion ? "&updated=true" : "&created=true");
+    header("Location: $url");
+    exit;
+
 } catch (Exception $e) {
-    // Para depuración, puedes mostrar el error o loggearlo
-    echo "Error: " . $e->getMessage();
-    // En un entorno de producción, es mejor redirigir a una página de error o mostrar un mensaje genérico.
-    // header("Location: error.html?msg=" . urlencode($e->getMessage()));
+    echo "Error crítico: " . $e->getMessage();
     exit;
 }
