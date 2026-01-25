@@ -1,25 +1,17 @@
 <?php
 
-function generateFunnyOrderId() {
+function generateId() {
+    // Obtenemos el año actual (2) y el día del año (001-366)
+    // Ej: Para hoy sería algo como "26025"
+    $prefix = date('y') . date('z'); 
 
-    $adjectives = [
-        "perro","gato","elefante","chichihuilote","tigre",
-        "mono","conejo","lobo","delfin","zorro",
-        "oso","canguro","pinguino","leon","rinoceronte"
-    ];
+    // Generamos un hash único basado en el tiempo exacto en microsegundos
+    // y lo acortamos a 4 caracteres alfanuméricos en mayúsculas
+    $uniqueSeed = uniqid();
+    $shortHash = strtoupper(substr(md5($uniqueSeed), 0, 4));
 
-    $verbs = [
-        "saltarin","bailador","piruteador","corredor","embrujado",
-        "volador-no-indentificado","ratero","rodador","tragon","imitador",
-        "estafador","enbalsamador","cosquilludo","deizquiera","ojon"
-    ];
-
-    $randomAdjective1 = $adjectives[array_rand($adjectives)];
-    $randomVerb = $verbs[array_rand($verbs)];
-
-    $dateTime = date('YmdH'); 
-
-    $id = "{$randomAdjective1}-{$randomVerb}-{$dateTime}";
+    // El resultado será algo como: 26025-A1B2
+    $id = "{$prefix}-{$shortHash}";
 
     return $id;
 }

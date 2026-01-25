@@ -30,24 +30,25 @@ session_start();
 
         @media print {
             /* Ocultar elementos innecesarios */
-            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp, .navbar, .modal { 
+            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp, .navbar, .modal, .no-print { 
                 display: none !important; 
             }
-            body { background: white !important; font-size: 11pt; }
+            body { background: white !important; font-size: 11pt; padding: 0; }
             .pedido-container { box-shadow: none !important; border: 1px solid #ddd !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; }
+            .card { border: none !important; box-shadow: none !important; }
             
-            /* Ajuste de imágenes para que salgan todas en la hoja */
+            /* Ajuste de imágenes para impresión */
             .swiper { height: auto !important; }
             .swiper-wrapper { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; transform: none !important; }
             .swiper-slide { width: 45% !important; height: auto !important; display: block !important; }
-            .swiper-slide img { max-height: 200px !important; width: auto !important; border: 1px solid #eee; }
+            .swiper-slide img { max-height: 250px !important; width: auto !important; border: 1px solid #eee; }
 
-            /* Claridad en textos técnicos */
+            /* Forzar visualización de paleta en papel */
+            .d-print-block { display: block !important; }
+            .img-paleta-print { max-height: 350px !important; margin: 0 auto; display: block; break-inside: avoid; }
+
             .instrucciones-box { background-color: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
             .color-chip { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            
-            /* Forzar visualización de campos ocultos de impresión */
-            .d-print-block { display: block !important; }
         }
     </style>
 </head>
@@ -68,9 +69,8 @@ session_start();
     <div class="pedido-header text-center mb-4">
         <h2 class="fw-bold">Detalles de tu Pedido</h2>
         <p id="pedido-nombre" class="text-muted mb-2 h5"></p>
-        
         <div id="contacto-cliente" class="mb-2"></div>
-        <div class="d-none d-print-block text-muted small mb-3">
+        <div class="d-none d-print-block text-muted small mb-3 text-center">
             <strong>Contacto:</strong> <span id="pedido-telefono-print"></span>
         </div>
     </div>
@@ -82,14 +82,21 @@ session_start();
         <div class="swiper-pagination"></div>
     </div>
 
-    <div class="d-flex justify-content-center gap-2 mb-4"> 
+    <div class="d-flex justify-content-center gap-2 mb-4 no-print"> 
         <button class="btn btn-light border btn-sm" data-bs-toggle="modal" data-bs-target="#modalPaleta">
             <i class="bx bx-palette text-primary"></i> Paleta de colores
         </button>
         <div id="btn-cotizacion-container"></div>
     </div>
 
-    <div class="pedido-timeline mb-5">
+    <div class="d-none d-print-block mb-4">
+        <div class="fw-bold mb-2 small text-uppercase text-muted border-bottom pb-1">Paleta de Colores Taller</div>
+        <div class="text-center">
+            <img id="pedido-paleta-print" src="" class="img-fluid rounded border img-paleta-print">
+        </div>
+    </div>
+
+    <div class="pedido-timeline mb-5 no-print">
         <ul class="timeline-list d-flex justify-content-between list-unstyled px-0 mb-0">
             <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-receipt"></i></div><div class="timeline-label small mt-2">Recibida</div></li>
             <li class="timeline-item text-center"><div class="timeline-circle shadow-sm"><i class="bx bx-dollar"></i></div><div class="timeline-label small mt-2">Anticipo</div></li>
@@ -143,11 +150,11 @@ session_start();
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0 text-center">
                 <thead class="table-light">
-                    <tr><th style="width: 40%;">Talla</th><th style="width: 30%;">Cantidad</th><th style="width: 30%;">Color</th></tr>
+                    <tr><th>Talla</th><th>Cantidad</th><th>Color</th></tr>
                 </thead>
                 <tbody id="pedido-tallas"></tbody>
                 <tfoot class="table-light border-top">
-                    <tr><td class="text-center fw-bold">Total piezas</td><td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td><td></td></tr>
+                    <tr><td class="fw-bold">Total piezas</td><td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td><td></td></tr>
                 </tfoot>
             </table>
         </div>
@@ -160,121 +167,75 @@ session_start();
 <script>
     const estados = ["Recibida", "Anticipo recibido", "En produccion", "Finalizada", "Entregada"];
     const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
-
     const params = new URLSearchParams(window.location.search);
     const pedidoId = params.get("id");
-    const container = document.querySelector(".pedido-container");
 
-    if (!pedidoId) {
-        container.innerHTML = '<h3 class="text-center text-danger py-5">ID de pedido no proporcionado</h3>';
-    } else {
+    if (pedidoId) {
         fetch(`php/editor.php?id=${pedidoId}`)
         .then(res => res.json())
         .then(data => {
-            if (!data.success || !data.pedido) {
-                container.innerHTML = `<h3 class="text-center text-danger py-5">No se encontró el pedido</h3>`;
-                return;
-            }
-
+            if (!data.success) return;
             const p = data.pedido;
-            const costo = parseFloat(p.costo || 0);
-            const anticipo = parseFloat(p.anticipo || 0);
-            const restante = Math.max(0, costo - anticipo);
 
-            // 1. LLENAR DATOS GENERALES
+            // Datos generales
             document.getElementById("pedido-nombre").textContent = p.nombre;
             document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
             document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
-            
-            // CONTACTO Y WHATSAPP
-            if (p.telefono) {
-                document.getElementById("pedido-telefono-print").textContent = p.telefono;
-                const telLimpio = p.telefono.replace(/\D/g,'');
-                document.getElementById("contacto-cliente").innerHTML = `
-                    <a href="https://wa.me/52${telLimpio}" target="_blank" class="btn-whatsapp shadow-sm">
-                        <i class="bx bxl-whatsapp"></i> WhatsApp
-                    </a>`;
-            }
 
-            // COTIZACIÓN
-            if (p.cotizacion) {
-                document.getElementById("btn-cotizacion-container").innerHTML = `
-                    <a href="${p.cotizacion}" target="_blank" class="btn btn-outline-dark btn-sm shadow-sm">
-                        <i class="bx bx-file"></i> Cotización
-                    </a>`;
-            }
+            // Saldos
+            let costo = parseFloat(p.costo || 0);
+            let anticipo = parseFloat(p.anticipo || 0);
+            if (p.status === "Entregada") anticipo = costo;
+            const restante = Math.max(0, costo - anticipo);
 
-            // INSTRUCCIONES
-            if (p.instrucciones && p.instrucciones.trim() !== "") {
-                document.getElementById("seccion-instrucciones").classList.remove("d-none");
-                document.getElementById("pedido-instrucciones").textContent = p.instrucciones;
-            }
-
-            // 2. TIMELINE Y SALDOS
-            const elTotal = document.getElementById("admin-costo-total");
-            if (elTotal) {
-                elTotal.textContent = fmtMoney(costo);
+            if (document.getElementById("admin-costo-total")) {
+                document.getElementById("admin-costo-total").textContent = fmtMoney(costo);
                 document.getElementById("admin-anticipo-pagado").textContent = fmtMoney(anticipo);
                 document.getElementById("admin-saldo-restante").textContent = fmtMoney(restante);
                 const cardS = document.getElementById("card-saldo");
-                if (restante > 0) { 
-                    cardS.classList.add("bg-warning", "text-dark"); 
-                    cardS.classList.remove("bg-success", "text-white"); 
-                } else { 
-                    cardS.classList.add("bg-success", "text-white"); 
-                    cardS.classList.remove("bg-warning", "text-dark"); 
-                }
+                cardS.className = "p-2 rounded-3 text-center shadow-sm " + (restante > 0 ? "bg-warning text-dark" : "bg-success text-white");
             }
 
-            const elRestante = document.getElementById("pedido-restante");
-            if (elRestante) {
-                elRestante.textContent = fmtMoney(restante);
-                const pct = costo ? Math.min(100, Math.round((anticipo / costo) * 100)) : 0;
-                document.getElementById("barra-pago").style.width = pct + "%";
-            }
-
+            // Timeline
             document.querySelectorAll(".timeline-item").forEach((item, index) => {
                 if (index <= estados.indexOf(p.status)) item.classList.add("completed");
             });
 
-            if (p.paletaColor) document.getElementById("pedido-paleta").src = p.paletaColor;
+            // Instrucciones
+            if (p.instrucciones) {
+                document.getElementById("seccion-instrucciones").classList.remove("d-none");
+                document.getElementById("pedido-instrucciones").textContent = p.instrucciones;
+            }
 
-            // 3. TABLA TALLAS
+            // Tallas
             const tbody = document.getElementById("pedido-tallas");
-            tbody.innerHTML = "";
             let totalP = 0;
             (p.tallas || []).forEach(t => {
-                const cant = parseInt(t.cantidad) || 0;
-                totalP += cant;
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td>${t.talla}</td><td>${cant}</td><td><span class="color-chip shadow-sm" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:2px solid white;"></span></td>`;
-                tbody.appendChild(tr);
+                totalP += parseInt(t.cantidad);
+                tbody.innerHTML += `<tr><td>${t.talla}</td><td>${t.cantidad}</td><td><span class="color-chip" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:1px solid #ddd;"></span></td></tr>`;
             });
             document.getElementById("total-piezas").textContent = totalP;
 
-            // 4. IMÁGENES (CARRUSEL)
+            // Imágenes y Paleta
+            if (p.paletaColor) {
+                document.getElementById("pedido-paleta").src = p.paletaColor;
+                document.getElementById("pedido-paleta-print").src = p.paletaColor;
+            }
             const wrap = document.getElementById("pedido-imagenes");
-            wrap.innerHTML = "";
             (p.imagenes || []).forEach(src => {
-                const slide = document.createElement("div");
-                slide.className = "swiper-slide text-center";
-                slide.innerHTML = `<img src="${src}" class="rounded shadow-sm" style="max-height: 300px; cursor: zoom-in;">`;
-                slide.onclick = () => {
-                    document.getElementById('img-visor').src = src;
-                    new bootstrap.Modal(document.getElementById('modalVisor')).show();
-                };
-                wrap.appendChild(slide);
+                wrap.innerHTML += `<div class="swiper-slide"><img src="${src}" class="rounded shadow-sm" style="max-height: 300px;"></div>`;
             });
 
-            new Swiper(".mySwiper", {
-                loop: true,
-                pagination: { el: ".swiper-pagination", clickable: true },
+            new Swiper(".mySwiper", { 
+                loop: true, 
+                pagination: { el: ".swiper-pagination" },
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" }
             });
-        })
-        .catch(err => {
-            console.error(err);
-            container.innerHTML = '<h3 class="text-center text-danger py-5">Error al cargar datos</h3>';
+
+            // Auto-impresión
+            if (params.has('print')) {
+                setTimeout(() => { window.print(); }, 800);
+            }
         });
     }
 </script>

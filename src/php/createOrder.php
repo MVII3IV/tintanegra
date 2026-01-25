@@ -14,7 +14,7 @@ $pedidoId = $_POST['pedido_id'] ?? null;
 $esEdicion = !empty($pedidoId);
 
 if (!$esEdicion) {
-    $pedidoId = generateFunnyOrderId();
+    $pedidoId = generateId();
 }
 
 // RECUPERAR DATOS PREVIOS PARA LIMPIEZA
