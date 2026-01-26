@@ -22,31 +22,25 @@ session_start();
         .card-soft { border-radius: 15px; transition: transform 0.2s; }
         .timeline-item.completed .timeline-circle { background-color: #0d6efd; color: white; }
         #card-saldo { transition: all 0.4s ease; }
-        
-        /* Estilos para Instrucciones y Contacto */
         .instrucciones-box { background-color: #fff3cd; border-left: 5px solid #ffc107; color: #856404; padding: 15px; border-radius: 8px; font-style: italic; white-space: pre-wrap; }
-        .btn-whatsapp { background-color: #25d366; color: white; border-radius: 50px; padding: 6px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; transition: background 0.3s; }
-        .btn-whatsapp:hover { background-color: #128c7e; color: white; }
+        
+        /* Botón de Cotización */
+        .btn-cotizacion { background-color: #f8f9fa; border: 1px solid #ddd; color: #333; transition: all 0.3s; }
+        .btn-cotizacion:hover { background-color: #e9ecef; border-color: #ccc; }
 
         @media print {
-            /* Ocultar elementos innecesarios */
-            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .btn-whatsapp, .navbar, .modal, .no-print { 
+            .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .navbar, .modal, .no-print { 
                 display: none !important; 
             }
             body { background: white !important; font-size: 11pt; padding: 0; }
             .pedido-container { box-shadow: none !important; border: 1px solid #ddd !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; }
             .card { border: none !important; box-shadow: none !important; }
-            
-            /* Ajuste de imágenes para impresión */
             .swiper { height: auto !important; }
             .swiper-wrapper { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; transform: none !important; }
             .swiper-slide { width: 45% !important; height: auto !important; display: block !important; }
             .swiper-slide img { max-height: 250px !important; width: auto !important; border: 1px solid #eee; }
-
-            /* Forzar visualización de paleta en papel */
             .d-print-block { display: block !important; }
             .img-paleta-print { max-height: 350px !important; margin: 0 auto; display: block; break-inside: avoid; }
-
             .instrucciones-box { background-color: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
             .color-chip { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
@@ -69,10 +63,6 @@ session_start();
     <div class="pedido-header text-center mb-4">
         <h2 class="fw-bold">Detalles de tu Pedido</h2>
         <p id="pedido-nombre" class="text-muted mb-2 h5"></p>
-        <div id="contacto-cliente" class="mb-2"></div>
-        <div class="d-none d-print-block text-muted small mb-3 text-center">
-            <strong>Contacto:</strong> <span id="pedido-telefono-print"></span>
-        </div>
     </div>
 
     <div class="swiper mySwiper mb-4">
@@ -162,7 +152,6 @@ session_start();
 </div>
 
 <div class="modal fade" id="modalPaleta" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content shadow"><div class="modal-header border-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center p-4"><img id="pedido-paleta" src="" class="img-fluid rounded shadow-sm" /></div></div></div></div>
-<div class="modal fade" id="modalVisor" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-dark border-0"><div class="modal-header border-0"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-0 text-center"><img id="img-visor" src="" style="max-height: 85vh; width: auto; object-fit: contain;"></div></div></div></div>
 
 <script>
     const estados = ["Recibida", "Anticipo recibido", "En produccion", "Finalizada", "Entregada"];
@@ -177,12 +166,11 @@ session_start();
             if (!data.success) return;
             const p = data.pedido;
 
-            // Datos generales
             document.getElementById("pedido-nombre").textContent = p.nombre;
             document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
             document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
 
-            // Saldos
+            // Lógica de Saldos
             let costo = parseFloat(p.costo || 0);
             let anticipo = parseFloat(p.anticipo || 0);
             if (p.status === "Entregada") anticipo = costo;
@@ -194,6 +182,10 @@ session_start();
                 document.getElementById("admin-saldo-restante").textContent = fmtMoney(restante);
                 const cardS = document.getElementById("card-saldo");
                 cardS.className = "p-2 rounded-3 text-center shadow-sm " + (restante > 0 ? "bg-warning text-dark" : "bg-success text-white");
+            } else {
+                document.getElementById("pedido-restante").textContent = fmtMoney(restante);
+                const pct = (anticipo / costo) * 100;
+                document.getElementById("barra-pago").style.width = pct + "%";
             }
 
             // Timeline
@@ -216,14 +208,16 @@ session_start();
             });
             document.getElementById("total-piezas").textContent = totalP;
 
-            // Imágenes y Paleta
+            // Paleta
             if (p.paletaColor) {
                 document.getElementById("pedido-paleta").src = p.paletaColor;
                 document.getElementById("pedido-paleta-print").src = p.paletaColor;
             }
+
+            // Imágenes Swiper
             const wrap = document.getElementById("pedido-imagenes");
             (p.imagenes || []).forEach(src => {
-                wrap.innerHTML += `<div class="swiper-slide"><img src="${src}" class="rounded shadow-sm" style="max-height: 300px;"></div>`;
+                wrap.innerHTML += `<div class="swiper-slide"><img src="${src}" class="rounded shadow-sm" style="max-height: 300px; width:auto;"></div>`;
             });
 
             new Swiper(".mySwiper", { 
@@ -232,7 +226,19 @@ session_start();
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" }
             });
 
-            // Auto-impresión
+            // LÓGICA DE COTIZACIÓN (PDF o Imagen)
+            if (p.cotizacion) {
+                const cotContainer = document.getElementById("btn-cotizacion-container");
+                const esPdf = p.cotizacion.toLowerCase().endsWith('.pdf');
+                const icon = esPdf ? 'bxs-file-pdf text-danger' : 'bx-image text-success';
+                const label = esPdf ? 'Ver Cotización (PDF)' : 'Ver Cotización (Imagen)';
+                
+                cotContainer.innerHTML = `
+                    <a href="${p.cotizacion}" target="_blank" class="btn btn-sm btn-cotizacion shadow-sm">
+                        <i class="bx ${icon}"></i> ${label}
+                    </a>`;
+            }
+
             if (params.has('print')) {
                 setTimeout(() => { window.print(); }, 800);
             }

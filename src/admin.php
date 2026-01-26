@@ -470,12 +470,23 @@ require_once 'php/config.php';
         }
 
         function addTallaEntry(talla = '', cantidad = 1, color = '#000000') {
+            // Lógica para recordar valores de la última fila si se añaden vacíos
+            if (talla === '' && color === '#000000') {
+                const filas = tallasContainer.querySelectorAll('.talla-entry');
+                if (filas.length > 0) {
+                    const ultimaFila = filas[filas.length - 1];
+                    talla = ultimaFila.querySelector('input[name="talla[]"]').value;
+                    color = ultimaFila.querySelector('input[name="color[]"]').value;
+                }
+            }
+
             const div = document.createElement('div');
             div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
             div.innerHTML = `<input type="text" class="form-control" name="talla[]" placeholder="Ej: L" value="${talla}">
                 <input type="number" class="form-control" name="cantidad[]" value="${cantidad}" min="0" style="width: 80px;">
                 <input type="color" class="form-control form-control-color" name="color[]" value="${color}">
                 <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>`;
+            
             tallasContainer.appendChild(div);
             div.querySelector('input[name="cantidad[]"]').addEventListener('input', calcularTotalPiezas);
             calcularTotalPiezas();
