@@ -216,9 +216,13 @@ require_once 'php/config.php';
                 <div class="mb-4"><i class="bx bx-error-circle text-danger" style="font-size: 80px;"></i></div>
                 <h4 class="fw-bold mb-3">¿Confirmar eliminación?</h4>
                 <p class="text-muted mb-4">Esta acción eliminará permanentemente el pedido y sus archivos. No podrás deshacerlo.</p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4">Eliminar Ahora</button>
+                <div class="d-flex gap-3 justify-content-center mt-4" dir="ltr">
+                    <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4 fw-bold" style="white-space: nowrap; min-width: 140px;">
+                        Eliminar Ahora
+                    </button>
                 </div>
             </div>
         </div>
