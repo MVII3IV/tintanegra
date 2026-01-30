@@ -82,9 +82,13 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
                 <h5 class="mb-0 fw-bold">Pedidos Activos</h5>
             </div>
             <div class="col-md-7">
-                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                    <span class="input-group-text bg-light border-end-0"><i class="bx bx-search text-primary"></i></span>
-                    <input type="text" id="buscadorNombre" class="form-control border-start-0 border-end-0 ps-0" placeholder="Buscar cliente...">
+                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">                    
+                    <button type="button" id="btnGenerarLista" class="btn btn-warning d-flex align-items-center gap-1 border-0 rounded-0" style="display: none;">
+                        <i class="bx bx-cart-alt fs-5"></i> 
+                        <span class="d-none d-sm-inline fw-bold">Lista Compra</span>
+                        <span id="contadorSeleccionados" class="badge bg-dark rounded-pill ms-1">0</span>
+                    </button>
+                    <input type="text" id="buscadorNombre" class="form-control border-start-0 border-end-0 ps-2" placeholder="Buscar cliente...">
                     <a href="orders.php" class="btn btn-primary d-flex align-items-center gap-1 border-0">
                         <i class="bx bx-list-ul fs-5"></i> <span class="d-none d-sm-inline">Ver Todas</span>
                     </a>

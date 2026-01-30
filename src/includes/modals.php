@@ -91,3 +91,21 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalListaCompra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-primary text-white border-0" style="border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title"><i class="bx bx-list-check me-2"></i>Lista de Compra Consolidada</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="listaCompraContent"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bx bx-printer"></i> Imprimir</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,8 +3,10 @@
  */
 
 const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+let pedidosCargados = []; // Almacén global de pedidos
 
-// Funciones Auxiliares
+// --- FUNCIONES AUXILIARES ---
+
 function generarLinkWhatsApp(p) {
     if (!p.telefono) return '#'; 
     const telLimpio = p.telefono.replace(/\D/g, '');
@@ -22,7 +24,23 @@ function calcularTotalPiezas() {
     document.getElementById('totalPiezasAdmin').innerText = total;
 }
 
-// Cargar Pedidos AJAX
+function actualizarBotonLista() {
+    const checks = document.querySelectorAll('.check-pedido:checked');
+    const btn = document.getElementById('btnGenerarLista');
+    const contador = document.getElementById('contadorSeleccionados');
+    
+    if (btn) {
+        if (checks.length > 0) {
+            btn.style.display = 'inline-flex';
+            contador.innerText = checks.length;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+}
+
+// --- LÓGICA PRINCIPAL ---
+
 function cargarPedidos(nombre = '') {
     fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(nombre)}`)
         .then(res => res.json())
@@ -32,8 +50,19 @@ function cargarPedidos(nombre = '') {
             const resultadosDiv = document.getElementById('resultados');
 
             if (data.success && data.pedidos.length > 0) {
+                pedidosCargados = data.pedidos;
+
                 let html = `<div class="table-responsive"><table class="table table-hover align-middle">
-                    <thead><tr class="text-muted small text-uppercase"><th>Cliente / Detalle</th><th>Entrega</th><th>Saldo</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody>`;
+                    <thead>
+                        <tr class="text-muted small text-uppercase">
+                            <th style="width: 40px;" class="text-center"><input type="checkbox" class="form-check-input cursor-pointer" id="checkAll"></th>
+                            <th>Cliente / Detalle</th>
+                            <th>Entrega</th>
+                            <th>Saldo</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead><tbody>`;
                 
                 data.pedidos.filter(p => p.status !== 'Entregada').forEach(p => {
                     if (p.status === 'En produccion') stats.produccion++;
@@ -54,6 +83,7 @@ function cargarPedidos(nombre = '') {
                     }
 
                     html += `<tr class="bg-white">
+                        <td class="text-center"><input type="checkbox" class="form-check-input check-pedido cursor-pointer" value="${p.id}"></td>
                         <td>
                             <a href="showOrder.php?id=${p.id}" class="fw-bold text-dark text-decoration-none">${p.nombre}</a>
                             ${detallePrendas}
@@ -70,17 +100,76 @@ function cargarPedidos(nombre = '') {
                         </td></tr>`;
                 });
                 resultadosDiv.innerHTML = html + "</tbody></table></div>";
+                
                 document.getElementById('stat-produccion').innerText = stats.produccion;
                 document.getElementById('stat-entrega').innerText = stats.entregaHoy;
                 document.getElementById('stat-finalizados').innerText = stats.listos;
                 document.getElementById('stat-cobro').innerText = '$' + stats.porCobrar.toLocaleString('es-MX');
+                
+                actualizarBotonLista();
+
             } else {
+                pedidosCargados = [];
                 resultadosDiv.innerHTML = '<p class="text-center py-4">Sin pedidos activos.</p>';
             }
         });
 }
 
-// Agregar fila de talla
+function generarResumenCompra() {
+    const seleccionados = Array.from(document.querySelectorAll('.check-pedido:checked')).map(cb => cb.value);
+    if (seleccionados.length === 0) return;
+
+    const pedidosFiltrados = pedidosCargados.filter(p => seleccionados.includes(p.id.toString()));
+    const consolidado = {};
+
+    pedidosFiltrados.forEach(p => {
+        if (p.tallas && p.tallas.length > 0) {
+            p.tallas.forEach(t => {
+                const clave = `${t.prenda_id}_${t.talla}_${t.color}`;
+                if (!consolidado[clave]) {
+                    consolidado[clave] = {
+                        nombre: t.nombre_prenda || 'Prenda Desconocida',
+                        talla: t.talla,
+                        color: t.color,
+                        cantidad: 0
+                    };
+                }
+                consolidado[clave].cantidad += parseInt(t.cantidad);
+            });
+        }
+    });
+
+    // --- CORRECCIÓN AQUÍ: Forzamos text-align: left en el encabezado y en la celda ---
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle text-center">
+        <thead class="table-dark">
+            <tr>
+                <th style="text-align: left;">Prenda</th> <th>Color</th>
+                <th>Talla</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    
+    Object.values(consolidado).sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(item => {
+        html += `<tr>
+            <td class="fw-bold" style="text-align: left;">${item.nombre}</td> <td><span class="d-inline-block border rounded-circle shadow-sm" style="width:25px; height:25px; background-color:${item.color};"></span></td>
+            <td><span class="badge bg-secondary fs-6">${item.talla}</span></td>
+            <td class="fw-bold fs-5 text-primary">${item.cantidad}</td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table></div>`;
+    document.getElementById('listaCompraContent').innerHTML = html;
+    
+    const modalEl = document.getElementById('modalListaCompra');
+    if(modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+// --- GESTIÓN DE TALLAS ---
+
 function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '', isCopy = false) {
     const tallasContainer = document.getElementById('tallasContainer');
     
@@ -98,7 +187,6 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     const div = document.createElement('div');
     div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
     
-    // NOTA: catalogoPrendas debe ser definido globalmente en el PHP antes de cargar este script
     const listaOrdenada = [...window.catalogoPrendas].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
 
     let prendasHtml = `<option value="">-- Prenda --</option>`;
@@ -127,7 +215,6 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     calcularTotalPiezas();
 }
 
-// Recargar Catálogo
 function recargarCatalogoAjax() {
     fetch('php/catalog_management.php?accion=listar')
         .then(r => r.json())
@@ -158,11 +245,15 @@ function recargarCatalogoAjax() {
         });
 }
 
-// --- INICIALIZACIÓN Y EVENTOS ---
+// --- INICIALIZACIÓN ---
+
 document.addEventListener('DOMContentLoaded', () => {
-    const waModal = new bootstrap.Modal(document.getElementById('waModal'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    const confirmUpdateModal = new bootstrap.Modal(document.getElementById('confirmUpdateModal'));
+    const initModal = (id) => { const el = document.getElementById(id); return el ? new bootstrap.Modal(el) : null; };
+
+    const waModal = initModal('waModal');
+    const deleteModal = initModal('deleteModal');
+    const confirmUpdateModal = initModal('confirmUpdateModal');
+    const catalogoModal = initModal('modalCatalogo');
     let idToDelete = null;
 
     cargarPedidos();
@@ -171,23 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addTalla').addEventListener('click', () => addTallaEntry('', 1, '#000000', '', true));
     document.getElementById('buscadorNombre').addEventListener('input', (e) => cargarPedidos(e.target.value));
 
-    // Interceptar envío formulario
-    const formPedido = document.getElementById('pedidoForm');
-    formPedido.addEventListener('submit', function(e) {
-        const id = document.getElementById('pedidoId').value;
-        if (id) {
-            e.preventDefault();
-            confirmUpdateModal.show();
-        }
-    });
+    const btnLista = document.getElementById('btnGenerarLista');
+    if(btnLista) btnLista.addEventListener('click', generarResumenCompra);
 
-    document.getElementById('btnConfirmarUpdate').addEventListener('click', function() {
-        formPedido.submit();
-    });
-
-    // Event Delegation (Clicks globales)
     document.addEventListener('click', (e) => {
-        // WhatsApp
         const btnWA = e.target.closest('.btn-wa-preview');
         if (btnWA) {
             const link = btnWA.getAttribute('data-link');
@@ -195,10 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('wa-destinatario').innerText = btnWA.getAttribute('data-nombre');
             document.getElementById('wa-mensaje-pre').value = decodeURIComponent(urlObj.searchParams.get("text"));
             document.getElementById('wa-confirmar-link').dataset.tel = btnWA.getAttribute('data-tel').replace(/\D/g, '');
-            waModal.show();
+            if(waModal) waModal.show();
         }
 
-        // Editar
         const btnEdit = e.target.closest('.edit-btn');
         if (btnEdit) {
             const id = btnEdit.getAttribute('data-id');
@@ -230,19 +307,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Eliminar Pedido
         if (e.target.closest('.delete-btn')) {
             idToDelete = e.target.closest('.delete-btn').getAttribute('data-id');
-            deleteModal.show();
+            if(deleteModal) deleteModal.show();
         }
 
-        // Eliminar fila
         if (e.target.closest('.remove-talla')) {
             e.target.closest('.talla-entry').remove();
             calcularTotalPiezas();
         }
 
-        // Eliminar Prenda Catálogo
         if (e.target.closest('.btn-eliminar-prenda')) {
             const cid = e.target.closest('.btn-eliminar-prenda').getAttribute('data-id');
             if(confirm('¿Eliminar esta prenda del catálogo?')) {
@@ -258,13 +332,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Confirmar eliminación
-    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-        fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' })
-        .then(res => res.json()).then(data => { if (data.success) { deleteModal.hide(); cargarPedidos(); } });
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'checkAll') {
+            const checkboxes = document.querySelectorAll('.check-pedido');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            actualizarBotonLista();
+        }
+        if (e.target.classList.contains('check-pedido')) {
+            actualizarBotonLista();
+        }
     });
 
-    // Guardar nueva prenda
+    const formPedido = document.getElementById('pedidoForm');
+    if (formPedido) {
+        formPedido.addEventListener('submit', function(e) {
+            const id = document.getElementById('pedidoId').value;
+            if (id && confirmUpdateModal) {
+                e.preventDefault();
+                confirmUpdateModal.show();
+            }
+        });
+    }
+
+    const btnConfirmar = document.getElementById('btnConfirmarUpdate');
+    if(btnConfirmar) {
+        btnConfirmar.addEventListener('click', function() { formPedido.submit(); });
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' })
+        .then(res => res.json()).then(data => { 
+            if (data.success) { 
+                if(deleteModal) deleteModal.hide(); 
+                cargarPedidos(); 
+            } 
+        });
+    });
+
     document.getElementById('formNuevaPrenda').addEventListener('submit', function(e) {
         e.preventDefault();
         const form = this;
@@ -282,9 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    document.getElementById('wa-confirmar-link').addEventListener('mousedown', function() {
-        const tel = this.dataset.tel;
-        const msj = document.getElementById('wa-mensaje-pre').value;
-        this.href = `https://wa.me/52${tel}?text=${encodeURIComponent(msj)}`;
-    });
+    const btnWaLink = document.getElementById('wa-confirmar-link');
+    if(btnWaLink) {
+        btnWaLink.addEventListener('mousedown', function() {
+            const tel = this.dataset.tel;
+            const msj = document.getElementById('wa-mensaje-pre').value;
+            this.href = `https://wa.me/52${tel}?text=${encodeURIComponent(msj)}`;
+        });
+    }
 });
