@@ -33,12 +33,15 @@ if ($esEdicion) {
     }
 }
 
-// PROCESAR TALLAS
+// --- CORRECCIÓN AQUÍ: PROCESAR TALLAS Y PRENDA_ID ---
 $tallas = [];
+// Verificamos si existen los arrays enviados por el formulario
 if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     foreach ($_POST['talla'] as $i => $t) {
-        if (!empty($t)) {
+        // Guardamos si hay talla O si se seleccionó una prenda
+        if (!empty($t) || !empty($_POST['prenda_id'][$i])) {
             $tallas[] = [
+                'prenda_id' => $_POST['prenda_id'][$i] ?? 0, // <--- ESTO FALTABA PARA GUARDAR LA SELECCIÓN
                 'talla'    => htmlspecialchars($t),
                 'cantidad' => (int)$_POST['cantidad'][$i],
                 'color'    => htmlspecialchars($_POST['color'][$i])
@@ -47,7 +50,7 @@ if (isset($_POST['talla']) && is_array($_POST['talla'])) {
     }
 }
 
-// PROCESAR IMÁGENES DISEÑO (Misma lógica anterior)
+// PROCESAR IMÁGENES DISEÑO
 $imagenes = [];
 $newImagesUploaded = false;
 if (isset($_FILES['imagenes']) && is_array($_FILES['imagenes']['tmp_name'])) {
@@ -69,7 +72,7 @@ if ($newImagesUploaded && $esEdicion) {
     }
 } elseif (!$newImagesUploaded && $esEdicion) { $imagenes = $currentPedidoImages; }
 
-// PROCESAR PALETA (Misma lógica anterior)
+// PROCESAR PALETA
 $paletaPath = $currentPaletaColorPath;
 if (isset($_FILES['paletaColor']) && $_FILES['paletaColor']['error'] == UPLOAD_ERR_OK) {
     $ext = pathinfo($_FILES['paletaColor']['name'], PATHINFO_EXTENSION);
@@ -82,7 +85,7 @@ if (isset($_FILES['paletaColor']) && $_FILES['paletaColor']['error'] == UPLOAD_E
     }
 }
 
-// --- NUEVO: PROCESAR COTIZACIÓN ---
+// PROCESAR COTIZACIÓN
 $cotizacionPath = $currentCotizacionPath;
 if (isset($_FILES['cotizacion']) && $_FILES['cotizacion']['error'] == UPLOAD_ERR_OK) {
     $ext = pathinfo($_FILES['cotizacion']['name'], PATHINFO_EXTENSION);
@@ -98,17 +101,17 @@ if (isset($_FILES['cotizacion']) && $_FILES['cotizacion']['error'] == UPLOAD_ERR
 try {
     $params = [
         ':nombre'       => htmlspecialchars($_POST['nombre']),
-        ':telefono'     => htmlspecialchars($_POST['telefono']), // NUEVO
+        ':telefono'     => htmlspecialchars($_POST['telefono']),
         ':status'       => htmlspecialchars($_POST['status']),
         ':fechaInicio'  => $_POST['fechaInicio'],
         ':fechaEntrega' => $_POST['fechaEntrega'],
         ':costo'        => (float)$_POST['costo'],
         ':anticipo'     => (float)$_POST['anticipo'],
-        ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE),
-        ':instrucciones'=> htmlspecialchars($_POST['instrucciones']), // NUEVO
+        ':tallas'       => json_encode($tallas, JSON_UNESCAPED_UNICODE), // Ahora incluye 'prenda_id'
+        ':instrucciones'=> htmlspecialchars($_POST['instrucciones']),
         ':imagenes'     => json_encode($imagenes, JSON_UNESCAPED_UNICODE),
         ':paletaColor'  => $paletaPath,
-        ':cotizacion'   => $cotizacionPath, // NUEVO
+        ':cotizacion'   => $cotizacionPath,
         ':id'           => $pedidoId
     ];
 
@@ -124,6 +127,8 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
 
-    header("Location: ../showOrder?id=" . $pedidoId . ($esEdicion ? "&updated=true" : "&created=true"));
+    // Redirigir de vuelta al panel de administración (admin.php) en lugar de showOrder
+    header("Location: ../admin.php?success=true"); 
     exit;
 } catch (Exception $e) { echo "Error: " . $e->getMessage(); exit; }
+?>

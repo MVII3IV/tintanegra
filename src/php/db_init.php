@@ -2,7 +2,9 @@
 require_once 'config.php';
 
 try {
-    // 1. Asegurar que la tabla pedidos existe con la estructura base y UTF8
+    // ==========================================
+    // 1. TABLA PEDIDOS (Base del sistema)
+    // ==========================================
     $sqlPedidos = "CREATE TABLE IF NOT EXISTS pedidos (
         id varchar(255) NOT NULL,
         nombre varchar(255) DEFAULT NULL,
@@ -20,7 +22,9 @@ try {
     $pdo->exec($sqlPedidos);
     echo "✅ Tabla 'pedidos' lista.<br>";
 
-    // 2. Asegurar que la tabla usuarios existe
+    // ==========================================
+    // 2. TABLA USUARIOS (Login)
+    // ==========================================
     $sqlUsuarios = "CREATE TABLE IF NOT EXISTS usuarios (
         id int(11) NOT NULL AUTO_INCREMENT,
         username varchar(50) NOT NULL,
@@ -35,25 +39,61 @@ try {
     $pdo->exec($sqlUsuarios);
     echo "✅ Tabla 'usuarios' lista.<br>";
 
-    // 3. MIGRACIÓN: Agregar campos nuevos si no existen
-    $nuevasColumnas = [
+    // ==========================================
+    // 3. TABLA CATÁLOGO (Nueva funcionalidad)
+    // ==========================================
+    $sqlCatalogo = "CREATE TABLE IF NOT EXISTS catalogo_prendas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tipo_prenda VARCHAR(100) NOT NULL, 
+        marca VARCHAR(100),                
+        modelo VARCHAR(100),               
+        genero ENUM('Unisex', 'Dama', 'Niño') DEFAULT 'Unisex',
+        costo_base DECIMAL(10, 2) DEFAULT 0.00,
+        activo TINYINT(1) DEFAULT 1
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    $pdo->exec($sqlCatalogo);
+    echo "✅ Tabla 'catalogo_prendas' lista.<br>";
+
+    // ==========================================
+    // 4. MIGRACIONES (Actualizar campos faltantes)
+    // ==========================================
+    
+    // Lista de columnas nuevas para 'pedidos'
+    $nuevasColumnasPedidos = [
         "telefono"      => "ALTER TABLE pedidos ADD COLUMN telefono VARCHAR(20) AFTER nombre",
         "instrucciones" => "ALTER TABLE pedidos ADD COLUMN instrucciones TEXT AFTER tallas",
         "cotizacion"    => "ALTER TABLE pedidos ADD COLUMN cotizacion VARCHAR(255) AFTER paletaColor"
     ];
 
-    foreach ($nuevasColumnas as $columna => $query) {
+    foreach ($nuevasColumnasPedidos as $columna => $query) {
         $check = $pdo->query("SHOW COLUMNS FROM pedidos LIKE '$columna'");
         if ($check->rowCount() == 0) {
             $pdo->exec($query);
-            echo "➕ Campo '$columna' añadido con éxito.<br>";
+            echo "➕ Campo '$columna' añadido a PEDIDOS con éxito.<br>";
         } else {
-            echo "ℹ️ El campo '$columna' ya existe, saltando...<br>";
+            echo "ℹ️ Campo '$columna' ya existe en pedidos.<br>";
         }
     }
 
-    echo "🚀 **Sincronización completada con éxito.**";
+    // Lista de columnas nuevas para 'catalogo_prendas'
+    $nuevasColumnasCatalogo = [
+        "descripcion" => "ALTER TABLE catalogo_prendas ADD COLUMN descripcion TEXT AFTER modelo"
+    ];
+
+    foreach ($nuevasColumnasCatalogo as $columna => $query) {
+        $check = $pdo->query("SHOW COLUMNS FROM catalogo_prendas LIKE '$columna'");
+        if ($check->rowCount() == 0) {
+            $pdo->exec($query);
+            echo "➕ Campo '$columna' añadido a CATÁLOGO con éxito.<br>";
+        } else {
+            echo "ℹ️ Campo '$columna' ya existe en catálogo.<br>";
+        }
+    }
+
+    echo "<hr>🚀 <strong>Sincronización de Base de Datos completada correctamente.</strong>";
 
 } catch (PDOException $e) {
     die("❌ Error en la inicialización: " . $e->getMessage());
 }
+?>
