@@ -138,13 +138,22 @@ session_start();
     <div class="card-soft p-4 border shadow-sm mb-4">
         <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
         <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0 text-center">
-                <thead class="table-light">
-                    <tr><th>Talla</th><th>Cantidad</th><th>Color</th></tr>
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width: 45%; text-align: left;">Prenda / Modelo</th>
+                        <th>Talla</th>
+                        <th>Cant.</th>
+                        <th>Color</th>
+                    </tr>
                 </thead>
-                <tbody id="pedido-tallas"></tbody>
+                <tbody id="pedido-tallas" class="text-center"></tbody>
                 <tfoot class="table-light border-top">
-                    <tr><td class="fw-bold">Total piezas</td><td id="total-piezas" class="fw-bold text-primary" style="font-size: 1.1rem;">0</td><td></td></tr>
+                    <tr>
+                        <td colspan="2" class="fw-bold" style="text-align: left; padding-left: 10px;">Total piezas:</td>
+                        <td id="total-piezas" class="fw-bold text-primary text-center" style="font-size: 1.1rem;">0</td>
+                        <td></td>
+                    </tr>
                 </tfoot>
             </table>
         </div>
@@ -199,12 +208,26 @@ session_start();
                 document.getElementById("pedido-instrucciones").textContent = p.instrucciones;
             }
 
-            // Tallas
+            // Tabla de tallas
             const tbody = document.getElementById("pedido-tallas");
             let totalP = 0;
             (p.tallas || []).forEach(t => {
                 totalP += parseInt(t.cantidad);
-                tbody.innerHTML += `<tr><td>${t.talla}</td><td>${t.cantidad}</td><td><span class="color-chip" style="background:${t.color}; display:inline-block; width:20px; height:20px; border-radius:50%; border:1px solid #ddd;"></span></td></tr>`;
+                
+                const nombreFull = t.tipo_prenda || "Prenda estándar"; 
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-dark small" style="text-align: left;">${nombreFull}</td>
+                        <td><span class="badge bg-light text-dark border">${t.talla}</span></td>
+                        <td class="fw-bold">${t.cantidad}</td>
+                        <td>
+                            <span class="color-chip shadow-sm" 
+                                  style="background:${t.color}; display:inline-block; width:24px; height:24px; border-radius:50%; border:1px solid #ddd;"
+                                  title="Color">
+                            </span>
+                        </td>
+                    </tr>`;
             });
             document.getElementById("total-piezas").textContent = totalP;
 
@@ -226,7 +249,6 @@ session_start();
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" }
             });
 
-            // LÓGICA DE COTIZACIÓN (PDF o Imagen)
             if (p.cotizacion) {
                 const cotContainer = document.getElementById("btn-cotizacion-container");
                 const esPdf = p.cotizacion.toLowerCase().endsWith('.pdf');
