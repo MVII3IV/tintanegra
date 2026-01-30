@@ -39,6 +39,86 @@ function actualizarBotonLista() {
     }
 }
 
+/**
+ * Genera una ventana de impresión limpia y profesional
+ */
+function imprimirListaProfesional() {
+    // 1. Obtener la fecha actual formateada
+    const fecha = new Date().toLocaleDateString('es-MX', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    // 2. Obtener el contenido de la tabla generada
+    const tablaContenido = document.getElementById('listaCompraContent').innerHTML;
+
+    // 3. Crear una ventana nueva al vuelo
+    const ventana = window.open('', 'PRINT', 'height=600,width=800');
+
+    // 4. Escribir el HTML profesional
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Lista de Compra - Tinta Negra</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                .logo { max-width: 150px; margin-bottom: 10px; }
+                h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+                .meta { font-size: 12px; color: #666; margin-top: 5px; }
+                
+                /* Estilos de la Tabla Profesional */
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+                th { background-color: #f8f9fa; border-bottom: 2px solid #333; padding: 12px; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+                td { border-bottom: 1px solid #ddd; padding: 10px 12px; vertical-align: middle; }
+                
+                /* Alineación específica */
+                .text-end { text-align: right; }
+                .text-center { text-align: center; }
+                .fw-bold { font-weight: bold; }
+                .fs-5 { font-size: 1.1rem; }
+                
+                /* Ajuste para los colores al imprimir */
+                .color-circle {
+                    display: inline-block; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #999;
+                    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                }
+                
+                /* Pie de página */
+                .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="assets/images/tintanegra-black.png" class="logo" alt="Tinta Negra">
+                <h1>Lista de Compra Consolidada</h1>
+                <div class="meta">Generado el: ${fecha}</div>
+            </div>
+
+            ${tablaContenido}
+
+            <div class="footer">
+                Documento de uso interno - Tinta Negra Panel Administrativo
+            </div>
+        </body>
+        </html>
+    `);
+
+    // 5. Ajustar el HTML inyectado para que se vea bien (Reemplazamos clases de bootstrap por nuestras clases simples)
+    // Esto es un truco para que los círculos de color se impriman bien sin cargar todo Bootstrap
+    let htmlLimpio = ventana.document.body.innerHTML;
+    
+    // Reemplazamos los spans de color para usar la clase .color-circle definida arriba
+    // Buscamos el patrón del span original y le inyectamos la clase nueva
+    ventana.document.close(); // Cierra el flujo de escritura
+    ventana.focus(); // Enfoca la ventana
+
+    // Espera un momento para que cargue la imagen del logo y luego imprime
+    setTimeout(() => {
+        ventana.print();
+        ventana.close();
+    }, 500);
+}
+
 // --- LÓGICA PRINCIPAL ---
 
 function cargarPedidos(nombre = '') {
@@ -139,11 +219,12 @@ function generarResumenCompra() {
         }
     });
 
-    // --- CORRECCIÓN AQUÍ: Forzamos text-align: left en el encabezado y en la celda ---
+    // Hemos agregado '-webkit-print-color-adjust: exact' y 'print-color-adjust: exact' al span del color
     let html = `<div class="table-responsive"><table class="table table-bordered align-middle text-center">
         <thead class="table-dark">
             <tr>
-                <th style="text-align: left;">Prenda</th> <th>Color</th>
+                <th style="text-align: left;">Prenda</th>
+                <th>Color</th>
                 <th>Talla</th>
                 <th>Total</th>
             </tr>
@@ -152,7 +233,12 @@ function generarResumenCompra() {
     
     Object.values(consolidado).sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(item => {
         html += `<tr>
-            <td class="fw-bold" style="text-align: left;">${item.nombre}</td> <td><span class="d-inline-block border rounded-circle shadow-sm" style="width:25px; height:25px; background-color:${item.color};"></span></td>
+            <td class="fw-bold" style="text-align: left;">${item.nombre}</td>
+            <td>
+                <span class="d-inline-block border rounded-circle shadow-sm" 
+                      style="width:25px; height:25px; background-color:${item.color}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                </span>
+            </td>
             <td><span class="badge bg-secondary fs-6">${item.talla}</span></td>
             <td class="fw-bold fs-5 text-primary">${item.cantidad}</td>
         </tr>`;
@@ -394,4 +480,5 @@ document.addEventListener('DOMContentLoaded', () => {
             this.href = `https://wa.me/52${tel}?text=${encodeURIComponent(msj)}`;
         });
     }
+    
 });

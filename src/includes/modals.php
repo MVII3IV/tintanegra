@@ -104,7 +104,9 @@
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bx bx-printer"></i> Imprimir</button>
+                <button type="button" class="btn btn-primary" onclick="imprimirListaProfesional()">
+                    <i class="bx bx-printer"></i> Imprimir Reporte
+                </button>
             </div>
         </div>
     </div>
