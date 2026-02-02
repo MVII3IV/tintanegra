@@ -689,7 +689,7 @@ function obtenerNombreColor(hexInput) {
 
     // 2. Paleta Maestra de Colores (Agrega aquí todos los que quieras reconocer)
     const baseColors = [
-        { hex: "#000000", name: "Negro" },
+{ hex: "#000000", name: "Negro" },
         { hex: "#ffffff", name: "Blanco" },
         { hex: "#ff0000", name: "Rojo" },
         { hex: "#dc143c", name: "Rojo Carmesí" },
@@ -701,12 +701,14 @@ function obtenerNombreColor(hexInput) {
         { hex: "#008000", name: "Verde" },
         { hex: "#006400", name: "Verde Botella" },
         { hex: "#808080", name: "Gris" },
-        { hex: "#d3d3d3", name: "Gris Jaspe" }, // Gris claro común en playeras
+        { hex: "#d3d3d3", name: "Gris Jaspe" },
         { hex: "#ffa500", name: "Naranja" },
         { hex: "#800080", name: "Morado" },
         { hex: "#ffc0cb", name: "Rosa" },
-        { hex: "#ff1493", name: "Rosa Mexicano" }, // Fucsia
-        { hex: "#f5f5dc", name: "Beige" },
+        { hex: "#ff1493", name: "Rosa Mexicano" },
+        { hex: "#f5f5dc", name: "Beige" },       // Beige claro
+        { hex: "#e3dac9", name: "Beige" },       // <--- AGREGADO: Tono "Arena" o "Hueso" (atrapa los que se iban a Gris)
+        { hex: "#c2b280", name: "Arena" },       // <--- AGREGADO: Tono Arena más oscuro (Khaki)
         { hex: "#a52a2a", name: "Café" },
         { hex: "#40e0d0", name: "Turquesa" }
     ];
