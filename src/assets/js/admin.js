@@ -428,6 +428,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let idToDelete = null;
     let idCatalogoToDelete = null; 
 
+    // --- NUEVO: PREVISUALIZAR IMÁGENES LOCALES (AL SELECCIONAR) ---
+    const activarPrevisualizacion = (inputId, containerId) => {
+        const input = document.getElementById(inputId);
+        const container = document.getElementById(containerId);
+        
+        if (input && container) {
+            input.addEventListener('change', function() {
+                // 1. Limpiamos el contenedor (para no duplicar si eligen de nuevo)
+                container.innerHTML = '';
+
+                // 2. Recorremos los archivos seleccionados
+                if (this.files && this.files.length > 0) {
+                    Array.from(this.files).forEach(file => {
+                        const reader = new FileReader();
+                        
+                        // Detectamos si es PDF para poner icono, o imagen para poner foto
+                        if (file.type === 'application/pdf') {
+                            const div = document.createElement('div');
+                            div.innerHTML = `<button type="button" class="btn btn-sm btn-outline-danger shadow-sm" disabled><i class="bx bxs-file-pdf"></i> ${file.name.substring(0, 8)}...</button>`;
+                            container.appendChild(div);
+                        } else if (file.type.startsWith('image/')) {
+                            reader.onload = (e) => {
+                                const div = document.createElement('div');
+                                div.innerHTML = `<img src="${e.target.result}" class="rounded border shadow-sm" title="${file.name}" style="width:60px; height:60px; object-fit:cover;">`;
+                                container.appendChild(div);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            });
+        }
+    };
+
+    // Activamos la función para los 3 campos de archivo
+    activarPrevisualizacion('imagenes', 'imagenesPreview');
+    activarPrevisualizacion('paletaColor', 'paletaColorPreview');
+    activarPrevisualizacion('cotizacion', 'cotizacionPreview');
+    // ---------------------------------------------------------------
+
     cargarPedidos();
     addTallaEntry();
 
@@ -636,12 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
 });
 
-/**
- * NUEVA FUNCIÓN: Intenta adivinar el nombre del color
- */
-/**
- * NUEVA FUNCIÓN INTELIGENTE: Encuentra el color conocido más cercano
- */
+
 function obtenerNombreColor(hexInput) {
     // Si no hay input o es inválido, regresamos tal cual
     if (!hexInput || !hexInput.startsWith('#')) return hexInput;
