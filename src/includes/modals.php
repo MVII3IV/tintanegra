@@ -133,6 +133,26 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteCatalogoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bx bx-trash text-danger" style="font-size: 30px;"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-2">¿Eliminar Prenda?</h5>
+                <p class="text-muted small mb-4">Se quitará del catálogo de opciones.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnConfirmarBorrarCatalogo" class="btn btn-danger btn-sm px-3 rounded-pill">Sí, Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px; background: rgba(255, 255, 255, 0.98);">

@@ -332,31 +332,61 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     calcularTotalPiezas();
 }
 
+// --- REEMPLAZAR ESTA FUNCIÓN COMPLETA ---
+
 function recargarCatalogoAjax() {
     fetch('php/catalog_management.php?accion=listar')
         .then(r => r.json())
         .then(data => {
             if(data.success) {
-                window.catalogoPrendas = data.catalogo;
-                const tbody = document.getElementById('listaCatalogo');
-                tbody.innerHTML = '';
+                // 1. Actualizar la "memoria" global del catálogo
+                window.catalogoPrendas = data.catalogo || [];
                 
-                data.catalogo.forEach(r => {
-                    const row = document.createElement('tr');
-                    row.id = `prenda-${r.id}`;
-                    row.innerHTML = `
-                        <td>${r.tipo_prenda}</td>
-                        <td>${r.marca}</td>
-                        <td>${r.modelo}</td>
-                        <td class="text-muted small"><em>${r.descripcion || ''}</em></td>
-                        <td><span class="badge-catalogo">${r.genero}</span></td>
-                        <td>${fmtMoney(parseFloat(r.costo_base))}</td>
-                        <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-eliminar-prenda" data-id="${r.id}">
-                                <i class="bx bx-trash"></i>
-                            </button>
-                        </td>`;
-                    tbody.appendChild(row);
+                // 2. Actualizar la tabla visual dentro del modal (si está abierto)
+                const tbody = document.getElementById('listaCatalogo');
+                if(tbody) {
+                    tbody.innerHTML = '';
+                    data.catalogo.forEach(r => {
+                        const row = document.createElement('tr');
+                        row.id = `prenda-${r.id}`;
+                        row.innerHTML = `
+                            <td>${r.tipo_prenda}</td>
+                            <td>${r.marca}</td>
+                            <td>${r.modelo}</td>
+                            <td class="text-muted small"><em>${r.descripcion || ''}</em></td>
+                            <td><span class="badge-catalogo">${r.genero}</span></td>
+                            <td>${fmtMoney(parseFloat(r.costo_base))}</td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-eliminar-prenda" data-id="${r.id}"><i class="bx bx-trash"></i></button>
+                            </td>`;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                // 3. ¡NUEVO! Actualizar los selectores de prendas YA visibles en la pantalla
+                // Buscamos todos los selects de prendas que haya en el formulario
+                const selectsExistentes = document.querySelectorAll('select[name="prenda_id[]"]');
+                
+                selectsExistentes.forEach(select => {
+                    const valorSeleccionadoPrevio = select.value; // Guardamos lo que tenía seleccionado el usuario
+                    
+                    // Ordenamos alfabéticamente
+                    const listaOrdenada = [...window.catalogoPrendas].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
+                    
+                    // Reconstruimos las opciones
+                    let htmlOpciones = `<option value="">-- Prenda --</option>`;
+                    listaOrdenada.forEach(p => {
+                        // Si es la prenda que acabamos de agregar o la que ya tenía seleccionada, la marcamos
+                        const selected = (p.id == valorSeleccionadoPrevio) ? 'selected' : '';
+                        const desc = p.descripcion ? ` - ${p.descripcion}` : '';
+                        htmlOpciones += `<option value="${p.id}" ${selected}>${p.tipo_prenda} ${p.marca} (${p.modelo})${desc}</option>`;
+                    });
+                    
+                    // Inyectamos las nuevas opciones
+                    select.innerHTML = htmlOpciones;
+                    
+                    // Restauramos el valor seleccionado (si aún existe)
+                    select.value = valorSeleccionadoPrevio;
                 });
             }
         });
@@ -381,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nuevaUrl = window.location.pathname;
         window.history.replaceState({}, document.title, nuevaUrl);
     }
-    
+
     // 2. Activar "Guardia de Seguridad" de 10MB en todos los inputs de archivo
     document.querySelectorAll('input[type="file"]').forEach(input => {
         input.addEventListener('change', function() { 
@@ -396,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmUpdateModal = initModal('confirmUpdateModal');
     const catalogoModal = initModal('modalCatalogo');
     let idToDelete = null;
+    let idCatalogoToDelete = null; 
 
     cargarPedidos();
     addTallaEntry();
@@ -422,12 +453,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if(waModal) waModal.show();
         }
 
+       // --- BLOQUE DE EDICIÓN ACTUALIZADO (CON PREVIEWS) ---
         const btnEdit = e.target.closest('.edit-btn');
         if (btnEdit) {
             const id = btnEdit.getAttribute('data-id');
             fetch(`php/editor.php?id=${id}`).then(res => res.json()).then(data => {
                 if (data.success) {
                     const p = data.pedido;
+                    
+                    // 1. Llenar campos de texto
                     document.getElementById('pedidoId').value = p.id;
                     document.getElementById('nombrePedido').value = p.nombre;
                     document.getElementById('telefono').value = p.telefono || '';
@@ -438,16 +472,57 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('anticipo').value = p.anticipo;
                     document.getElementById('instrucciones').value = p.instrucciones || '';
                     
+                    // 2. Llenar tallas
                     const tallasContainer = document.getElementById('tallasContainer');
                     tallasContainer.innerHTML = '';
                     if (p.tallas && p.tallas.length > 0) {
                         p.tallas.forEach(t => {
-                            addTallaEntry(t.talla, t.cantidad, t.color, t.prenda_id, false);
+                            // Usamos p.prenda_id si existe
+                            addTallaEntry(t.talla, t.cantidad, t.color, t.prenda_id || '', false);
                         });
                     }
-                    
+
+                    // 3. NUEVO: MOSTRAR MINIATURAS (PREVIEWS)
+                    const renderPreview = (containerId, content, isArray = false) => {
+                        const container = document.getElementById(containerId);
+                        if (!container) return;
+                        container.innerHTML = ''; // Limpiar lo anterior
+
+                        let items = [];
+                        // Si es array (como imágenes generales) parseamos el JSON, si es simple (como paleta) lo usamos directo
+                        if (isArray) {
+                            try { items = (typeof content === 'string') ? JSON.parse(content) : content; } catch(e) { items = []; }
+                        } else if (content) {
+                            items = [content];
+                        }
+                        
+                        if (!Array.isArray(items)) items = [];
+
+                        items.forEach(url => {
+                            if (!url) return;
+                            const isPdf = url.toLowerCase().endsWith('.pdf');
+                            const el = document.createElement('div');
+                            
+                            // Creamos la miniatura o el icono de PDF
+                            if (isPdf) {
+                                el.innerHTML = `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm" title="Ver PDF"><i class="bx bxs-file-pdf"></i> PDF</a>`;
+                            } else {
+                                el.innerHTML = `<a href="${url}" target="_blank"><img src="${url}" class="rounded border shadow-sm" title="Clic para ver grande" style="width:60px; height:60px; object-fit:cover; cursor:zoom-in;"></a>`;
+                            }
+                            container.appendChild(el);
+                        });
+                    };
+
+                    // Ejecutamos para las 3 secciones
+                    renderPreview('imagenesPreview', p.imagenes, true);
+                    renderPreview('paletaColorPreview', p.paletaColor);
+                    renderPreview('cotizacionPreview', p.cotizacion);
+
+                    // 4. Actualizar título y botón
                     document.getElementById('formHeader').innerText = "Editando Pedido #" + p.id;
                     document.getElementById('submitButton').innerText = "Actualizar Pedido";
+                    
+                    // Subir suavemente al inicio del formulario
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             });
@@ -464,17 +539,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (e.target.closest('.btn-eliminar-prenda')) {
-            const cid = e.target.closest('.btn-eliminar-prenda').getAttribute('data-id');
-            if(confirm('¿Eliminar esta prenda del catálogo?')) {
-                const fd = new FormData(); fd.append('accion', 'eliminar'); fd.append('id', cid);
+            // Guardamos el ID en la variable nueva
+            idCatalogoToDelete = e.target.closest('.btn-eliminar-prenda').getAttribute('data-id');
+            
+            // Abrimos el modal bonito en lugar del confirm()
+            const modal = new bootstrap.Modal(document.getElementById('deleteCatalogoModal'));
+            modal.show();
+        }
+
+        const btnBorrarCat = document.getElementById('btnConfirmarBorrarCatalogo');
+        if (btnBorrarCat) {
+            btnBorrarCat.addEventListener('click', () => {
+                if (!idCatalogoToDelete) return;
+
+                const fd = new FormData(); 
+                fd.append('accion', 'eliminar'); 
+                fd.append('id', idCatalogoToDelete);
+
                 fetch('php/catalog_management.php', { method: 'POST', body: fd })
                 .then(r => r.json()).then(d => { 
                     if(d.success) {
-                        document.getElementById(`prenda-${cid}`).remove();
+                        // 1. Cerrar el modal de confirmación
+                        const modalEl = document.getElementById('deleteCatalogoModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modalInstance.hide();
+
+                        // 2. Borrar la fila visualmente (para feedback instantáneo)
+                        const row = document.getElementById(`prenda-${idCatalogoToDelete}`);
+                        if(row) row.remove();
+
+                        // 3. Recargar el catálogo y selectores
                         recargarCatalogoAjax(); 
+
+                        // 4. Mostrar el modal de Éxito
+                        const successModalEl = document.getElementById('successModal');
+                        if(successModalEl) {
+                            const modalExito = new bootstrap.Modal(successModalEl);
+                            modalExito.show();
+                            setTimeout(() => modalExito.hide(), 1500);
+                        }
+                    } else {
+                        alert('Error al eliminar: ' + (d.error || 'Desconocido'));
                     }
-                });
-            }
+                })
+                .catch(err => console.error('Error:', err));
+            });
         }
     });
 
@@ -488,22 +597,6 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarBotonLista();
         }
     });
-
-    const formPedido = document.getElementById('pedidoForm');
-    if (formPedido) {
-        formPedido.addEventListener('submit', function(e) {
-            const id = document.getElementById('pedidoId').value;
-            if (id && confirmUpdateModal) {
-                e.preventDefault();
-                confirmUpdateModal.show();
-            }
-        });
-    }
-
-    const btnConfirmar = document.getElementById('btnConfirmarUpdate');
-    if(btnConfirmar) {
-        btnConfirmar.addEventListener('click', function() { formPedido.submit(); });
-    }
 
     document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
         fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' })

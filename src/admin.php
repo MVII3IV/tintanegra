@@ -35,8 +35,8 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
         .section-title-admin { font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
         .table-container { background: #fff; border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         
-        .d-flex.justify-content-center.gap-1 .btn, 
-        .d-flex.justify-content-center.gap-2 .btn {
+        td .d-flex.justify-content-center.gap-1 .btn, 
+        td .d-flex.justify-content-center.gap-2 .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -59,10 +59,6 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
             <i class="bx bxs-dashboard me-2"></i> PANEL DE ADMINISTRADOR
         </a>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalCatalogo">
-                <i class="bx bx-closet"></i> Catálogo
-            </button>
-            <button onclick="location.reload()" class="btn btn-outline-light btn-sm"><i class="bx bx-refresh"></i></button>
             <a href="php/logout.php" class="btn btn-danger btn-sm">Cerrar Sesión</a>
         </div>
     </div>
