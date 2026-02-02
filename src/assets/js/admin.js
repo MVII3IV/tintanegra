@@ -6,15 +6,36 @@ const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency:
 let pedidosCargados = []; // Almacén global de pedidos
 
 // --- AGREGAR ESTO AL INICIO DEL ARCHIVO (Junto a fmtMoney) ---
-const LIMIT_MB = 1; // Límite de 10 MB
+const LIMIT_MB = 10; // Límite de 10 MB
 
 // Función para validar peso
+// Función para validar peso con Modal Bonito
 function validarPesoArchivo(input) {
     if (input.files && input.files.length > 0) {
         for (const file of input.files) {
             const sizeMB = file.size / (1024 * 1024);
             if (sizeMB > LIMIT_MB) {
-                alert(`⚠️ Archivo demasiado grande: "${file.name}"\n\nEl límite es de ${LIMIT_MB} MB.\nTu archivo pesa ${sizeMB.toFixed(2)} MB.`);
+                
+                // 1. Llenar los datos del modal
+                const nameEl = document.getElementById('fileSizeName');
+                const actualEl = document.getElementById('fileSizeActual');
+                const limitEl = document.getElementById('fileSizeLimit');
+
+                if(nameEl) nameEl.textContent = file.name;
+                if(actualEl) actualEl.textContent = sizeMB.toFixed(2) + ' MB';
+                if(limitEl) limitEl.textContent = LIMIT_MB + ' MB';
+
+                // 2. Mostrar el modal
+                const modalEl = document.getElementById('fileSizeModal');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                } else {
+                    // Fallback por si acaso no se cargó el HTML del modal
+                    alert(`⚠️ Archivo demasiado grande: "${file.name}"\nLímite: ${LIMIT_MB} MB`);
+                }
+
+                // 3. Limpiar el input para que no se suba el archivo erróneo
                 input.value = ''; 
                 return false;
             }
@@ -168,22 +189,13 @@ function cargarPedidos(nombre = '') {
                     const saldo = parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0);
                     if (saldo > 0) stats.porCobrar += saldo;
 
-                    let detallePrendas = '';
-                    if (p.tallas && p.tallas.length > 0) {
-                        detallePrendas = '<div class="mt-1">';
-                        p.tallas.forEach(t => {
-                            detallePrendas += `<span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.7rem; font-weight: 500;">
-                                ${t.cantidad}x ${t.nombre_prenda || 'Prenda'} [${t.talla}]
-                            </span>`;
-                        });
-                        detallePrendas += '</div>';
-                    }
+                    // NOTA: Eliminamos la variable detallePrendas para limpiar la vista visualmente.
+                    // Si quieres recuperarla en el futuro, el código estaba aquí.
 
                     html += `<tr class="bg-white">
                         <td class="text-center"><input type="checkbox" class="form-check-input check-pedido cursor-pointer" value="${p.id}"></td>
                         <td>
-                            <a href="showOrder.php?id=${p.id}" class="fw-bold text-dark text-decoration-none">${p.nombre}</a>
-                            ${detallePrendas}
+                            <a href="showOrder.php?id=${p.id}" class="fw-bold text-dark text-decoration-none d-block py-2">${p.nombre}</a>
                         </td>
                         <td class="small">${p.fechaEntrega}</td>
                         <td class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">$${saldo.toFixed(2)}</td>
@@ -276,6 +288,7 @@ function generarResumenCompra() {
 function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '', isCopy = false) {
     const tallasContainer = document.getElementById('tallasContainer');
     
+    // Lógica para copiar última fila
     if (isCopy === true && talla === '' && prendaId === '') {
         const filas = tallasContainer.querySelectorAll('.talla-entry');
         if (filas.length > 0) {
@@ -290,7 +303,7 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     const div = document.createElement('div');
     div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
     
-    const listaOrdenada = [...window.catalogoPrendas].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
+    const listaOrdenada = [...(window.catalogoPrendas || [])].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
 
     let prendasHtml = `<option value="">-- Prenda --</option>`;
     listaOrdenada.forEach(p => {
@@ -306,6 +319,7 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
         tallasHtml += `<option value="${t}" ${selected}>${t}</option>`;
     });
 
+    // AQUI ESTÁ EL HTML LIMPIO (Sin el botón de menú al inicio)
     div.innerHTML = `
         <select class="form-select form-select-sm" name="prenda_id[]" required style="flex: 2;">${prendasHtml}</select>
         <select class="form-select form-select-sm" name="talla[]" required style="flex: 1;">${tallasHtml}</select>
@@ -351,6 +365,30 @@ function recargarCatalogoAjax() {
 // --- INICIALIZACIÓN ---
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- NUEVO: DETECTAR SI SE GUARDÓ CON ÉXITO ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('success')) {
+        const modalExito = new bootstrap.Modal(document.getElementById('successModal'));
+        modalExito.show();
+
+        // 1. Cerrar automáticamente a los 2 segundos
+        setTimeout(() => {
+            modalExito.hide();
+        }, 2000);
+
+        // 2. Limpiar la URL (para que no salga otra vez si refrescas la página)
+        const nuevaUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, nuevaUrl);
+    }
+    
+    // 2. Activar "Guardia de Seguridad" de 10MB en todos los inputs de archivo
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() { 
+            validarPesoArchivo(this); 
+        });
+    });
+
     const initModal = (id) => { const el = document.getElementById(id); return el ? new bootstrap.Modal(el) : null; };
 
     const waModal = initModal('waModal');
@@ -369,6 +407,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(btnLista) btnLista.addEventListener('click', generarResumenCompra);
 
     document.addEventListener('click', (e) => {
+        // Abrir modal de catálogo desde las 3 barras
+        if (e.target.closest('.btn-open-catalogo')) {
+            if (catalogoModal) catalogoModal.show();
+        }
+
         const btnWA = e.target.closest('.btn-wa-preview');
         if (btnWA) {
             const link = btnWA.getAttribute('data-link');

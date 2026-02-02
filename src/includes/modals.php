@@ -41,22 +41,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="confirmUpdateModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <div class="modal-header bg-warning text-dark border-0" style="border-radius: 20px 20px 0 0;">
-                <h5 class="modal-title fw-bold"><i class="bx bx-error me-2"></i>Confirmar Cambios</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4 text-center"><p class="mb-0 fs-5">¿Estás seguro de que deseas actualizar la información de este pedido?</p></div>
-            <div class="modal-footer border-0 p-3 justify-content-center" dir="ltr">
-                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="btnConfirmarUpdate" class="btn btn-dark px-4">Sí, Actualizar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
@@ -108,6 +92,57 @@
                     <i class="bx bx-printer"></i> Imprimir Reporte
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fileSizeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4 position-relative d-inline-block">
+                    <i class="bx bx-file text-warning" style="font-size: 80px;"></i>
+                    <div class="bg-white rounded-circle position-absolute bottom-0 end-0 d-flex justify-content-center align-items-center" style="width: 35px; height: 35px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <i class="bx bx-x text-danger fw-bold" style="font-size: 24px;"></i>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mb-2">¡Archivo muy pesado!</h4>
+                <p class="text-muted mb-4 small">
+                    El archivo <strong id="fileSizeName" class="text-dark"></strong> excede el límite permitido por el servidor.
+                </p>
+
+                <div class="bg-light p-3 rounded-3 mb-4 mx-auto text-start" style="max-width: 300px; border: 1px dashed #ccc;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small text-muted">Tu archivo:</span>
+                        <strong id="fileSizeActual" class="small text-danger"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small text-muted">Límite máximo:</span>
+                        <strong id="fileSizeLimit" class="small text-success"></strong>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="button" class="btn btn-dark px-4 fw-bold shadow-sm rounded-pill" data-bs-dismiss="modal">
+                        Entendido, subiré uno más ligero
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px; background: rgba(255, 255, 255, 0.98);">
+            <div class="mb-3">
+                <div class="rounded-circle bg-success bg-gradient d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
+                    <i class="bx bx-check text-white fw-bold" style="font-size: 36px;"></i>
+                </div>
+            </div>
+            <h5 class="fw-bold mb-1 text-dark">¡Guardado!</h5>
+            <p class="text-muted small mb-0">La información se actualizó correctamente.</p>
         </div>
     </div>
 </div>

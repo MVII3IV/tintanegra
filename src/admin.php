@@ -77,24 +77,34 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="table-container mb-5">
-        <div class="row mb-3 align-items-center">
-            <div class="col-md-5">
-                <h5 class="mb-0 fw-bold">Pedidos Activos</h5>
-            </div>
-            <div class="col-md-7">
-                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">                    
-                    <button type="button" id="btnGenerarLista" class="btn btn-warning d-flex align-items-center gap-1 border-0 rounded-0" style="display: none;">
-                        <i class="bx bx-cart-alt fs-5"></i> 
-                        <span class="d-none d-sm-inline fw-bold">Lista Compra</span>
-                        <span id="contadorSeleccionados" class="badge bg-dark rounded-pill ms-1">0</span>
-                    </button>
-                    <input type="text" id="buscadorNombre" class="form-control border-start-0 border-end-0 ps-2" placeholder="Buscar cliente...">
-                    <a href="orders.php" class="btn btn-primary d-flex align-items-center gap-1 border-0">
-                        <i class="bx bx-list-ul fs-5"></i> <span class="d-none d-sm-inline">Ver Todas</span>
-                    </a>
+
+        <div class="row g-3 mb-4 align-items-center">
+    
+            <div class="col-md-6">
+                <div class="input-group shadow-sm bg-white rounded-3 overflow-hidden border">
+                    <span class="input-group-text bg-white border-0 text-muted ps-3">
+                        <i class="bx bx-search fs-5"></i>
+                    </span>
+                    <input type="text" id="buscadorNombre" class="form-control border-0 py-2" placeholder="Buscar cliente, pedido o teléfono...">
                 </div>
             </div>
+
+            <div class="col-md-6 d-flex justify-content-md-end justify-content-between gap-2">
+                
+                <button type="button" id="btnGenerarLista" class="btn btn-warning shadow-sm align-items-center gap-2" style="display: none; border-radius: 8px;">
+                    <i class="bx bx-cart-alt fs-5"></i> 
+                    <span class="d-none d-sm-inline fw-bold">Lista Compra</span>
+                    <span id="contadorSeleccionados" class="badge bg-dark rounded-pill">0</span>
+                </button>
+
+                <a href="orders.php" class="btn btn-white border shadow-sm text-dark d-flex align-items-center gap-2" style="border-radius: 8px; background: #fff;">
+                    <i class="bx bx-list-ul fs-5 text-primary"></i> 
+                    <span class="d-none d-sm-inline fw-medium">Ver Historial</span>
+                </a>
+            </div>
+
         </div>
+
         <div id="resultados"></div>
     </div>
 
@@ -154,7 +164,14 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
                     <h5 class="mb-0 fw-bold">Detalle de Prendas y Tallas</h5>
                     <small class="text-muted">Total acumulado: <span id="totalPiezasAdmin" class="fw-bold text-primary">0</span> piezas</small>
                 </div>
-                <button type="button" id="addTalla" class="btn btn-primary btn-sm"><i class="bx bx-plus"></i> Añadir Prenda</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-dark btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCatalogo">
+                        <i class="bx bx-closet"></i> Administrar Catálogo
+                    </button>
+                    <button type="button" id="addTalla" class="btn btn-primary btn-sm shadow-sm">
+                        <i class="bx bx-plus"></i> Añadir Prenda
+                    </button>
+                </div>
             </div>
             <div id="tallasContainer" class="mb-4"></div>
 
