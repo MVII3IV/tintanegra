@@ -5,8 +5,25 @@
 const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 let pedidosCargados = []; // Almacén global de pedidos
 
-// --- FUNCIONES AUXILIARES ---
+// --- AGREGAR ESTO AL INICIO DEL ARCHIVO (Junto a fmtMoney) ---
+const LIMIT_MB = 1; // Límite de 10 MB
 
+// Función para validar peso
+function validarPesoArchivo(input) {
+    if (input.files && input.files.length > 0) {
+        for (const file of input.files) {
+            const sizeMB = file.size / (1024 * 1024);
+            if (sizeMB > LIMIT_MB) {
+                alert(`⚠️ Archivo demasiado grande: "${file.name}"\n\nEl límite es de ${LIMIT_MB} MB.\nTu archivo pesa ${sizeMB.toFixed(2)} MB.`);
+                input.value = ''; 
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// --- FUNCIONES AUXILIARES ---
 function generarLinkWhatsApp(p) {
     if (!p.telefono) return '#'; 
     const telLimpio = p.telefono.replace(/\D/g, '');
@@ -482,3 +499,210 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
 });
+
+/**
+ * NUEVA FUNCIÓN: Intenta adivinar el nombre del color
+ */
+/**
+ * NUEVA FUNCIÓN INTELIGENTE: Encuentra el color conocido más cercano
+ */
+function obtenerNombreColor(hexInput) {
+    // Si no hay input o es inválido, regresamos tal cual
+    if (!hexInput || !hexInput.startsWith('#')) return hexInput;
+
+    // 1. Función interna para convertir Hex a RGB
+    const hexToRgb = (hex) => {
+        const bigint = parseInt(hex.slice(1), 16);
+        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    };
+
+    // 2. Paleta Maestra de Colores (Agrega aquí todos los que quieras reconocer)
+    const baseColors = [
+        { hex: "#000000", name: "Negro" },
+        { hex: "#ffffff", name: "Blanco" },
+        { hex: "#ff0000", name: "Rojo" },
+        { hex: "#dc143c", name: "Rojo Carmesí" },
+        { hex: "#800000", name: "Vino" },
+        { hex: "#0000ff", name: "Azul Rey" },
+        { hex: "#000080", name: "Azul Marino" },
+        { hex: "#87ceeb", name: "Azul Cielo" },
+        { hex: "#ffff00", name: "Amarillo" },
+        { hex: "#008000", name: "Verde" },
+        { hex: "#006400", name: "Verde Botella" },
+        { hex: "#808080", name: "Gris" },
+        { hex: "#d3d3d3", name: "Gris Jaspe" }, // Gris claro común en playeras
+        { hex: "#ffa500", name: "Naranja" },
+        { hex: "#800080", name: "Morado" },
+        { hex: "#ffc0cb", name: "Rosa" },
+        { hex: "#ff1493", name: "Rosa Mexicano" }, // Fucsia
+        { hex: "#f5f5dc", name: "Beige" },
+        { hex: "#a52a2a", name: "Café" },
+        { hex: "#40e0d0", name: "Turquesa" }
+    ];
+
+    // 3. Algoritmo de distancia (Busca el "vecino" más cercano)
+    const inputRgb = hexToRgb(hexInput);
+    let closestName = hexInput;
+    let minDistance = Infinity;
+
+    baseColors.forEach(base => {
+        const baseRgb = hexToRgb(base.hex);
+        // Distancia Euclidiana: Raíz cuadrada de la suma de las diferencias al cuadrado
+        const dist = Math.sqrt(
+            Math.pow(inputRgb.r - baseRgb.r, 2) +
+            Math.pow(inputRgb.g - baseRgb.g, 2) +
+            Math.pow(inputRgb.b - baseRgb.b, 2)
+        );
+
+        if (dist < minDistance) {
+            minDistance = dist;
+            closestName = base.name;
+        }
+    });
+
+    // Opcional: Si quieres mostrar también el código original para referencia
+    // return `${closestName} <span style="font-size:0.8em; opacity:0.5">(${hexInput})</span>`;
+    
+    return closestName;
+}
+
+/**
+ * ACTUALIZADA: Generar Lista con nombre de color
+ */
+function generarResumenCompra() {
+    const seleccionados = Array.from(document.querySelectorAll('.check-pedido:checked')).map(cb => cb.value);
+    if (seleccionados.length === 0) return;
+
+    const pedidosFiltrados = pedidosCargados.filter(p => seleccionados.includes(p.id.toString()));
+    const consolidado = {};
+
+    pedidosFiltrados.forEach(p => {
+        if (p.tallas && p.tallas.length > 0) {
+            p.tallas.forEach(t => {
+                const clave = `${t.prenda_id}_${t.talla}_${t.color}`;
+                if (!consolidado[clave]) {
+                    consolidado[clave] = {
+                        nombre: t.nombre_prenda || 'Prenda Desconocida',
+                        talla: t.talla,
+                        color: t.color,
+                        cantidad: 0
+                    };
+                }
+                consolidado[clave].cantidad += parseInt(t.cantidad);
+            });
+        }
+    });
+
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle text-center">
+        <thead class="table-dark">
+            <tr>
+                <th style="text-align: left;">Prenda</th>
+                <th style="text-align: left;">Color</th> <th>Talla</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    
+    Object.values(consolidado).sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(item => {
+        const nombreColor = obtenerNombreColor(item.color); // Obtenemos el nombre
+        
+        html += `<tr>
+            <td class="fw-bold" style="text-align: left;">${item.nombre}</td>
+            <td style="text-align: left;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-inline-block border rounded-circle shadow-sm" 
+                          style="width:25px; height:25px; background-color:${item.color}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                    </span>
+                    <span class="small fw-bold text-muted">${nombreColor}</span>
+                </div>
+            </td>
+            <td><span class="badge bg-secondary fs-6">${item.talla}</span></td>
+            <td class="fw-bold fs-5 text-primary">${item.cantidad}</td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table></div>`;
+    document.getElementById('listaCompraContent').innerHTML = html;
+    
+    const modalEl = document.getElementById('modalListaCompra');
+    if(modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+/**
+ * ACTUALIZADA: Imprimir (Arregla círculos invisibles)
+ */
+function imprimirListaProfesional() {
+    const fecha = new Date().toLocaleDateString('es-MX', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    const tablaContenido = document.getElementById('listaCompraContent').innerHTML;
+    const ventana = window.open('', 'PRINT', 'height=600,width=800');
+
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Lista de Compra - Tinta Negra</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                .logo { max-width: 150px; margin-bottom: 10px; }
+                h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+                .meta { font-size: 12px; color: #666; margin-top: 5px; }
+                
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+                th { background-color: #f8f9fa; border-bottom: 2px solid #333; padding: 12px; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+                td { border-bottom: 1px solid #ddd; padding: 10px 12px; vertical-align: middle; }
+                
+                /* --- ESTO ARREGLA LOS CÍRCULOS INVISIBLES --- */
+                /* Forzamos que los spans dentro de la tabla tengan tamaño y forma */
+                td span[style*="background-color"] {
+                    display: inline-block !important;
+                    width: 20px !important; 
+                    height: 20px !important;
+                    border-radius: 50% !important;
+                    border: 1px solid #999 !important;
+                    vertical-align: middle;
+                    margin-right: 8px;
+                }
+                
+                /* Estilos auxiliares para el texto del color */
+                .small { font-size: 0.9em; }
+                .text-muted { color: #555; }
+                .fw-bold { font-weight: bold; }
+                .text-primary { color: #000; font-weight: 900; } /* En negro para imprimir mejor */
+                
+                /* Ocultamos cosas de bootstrap que no sirven aquí */
+                .d-flex { display: block; } 
+                .badge { border: 1px solid #333; padding: 2px 6px; border-radius: 4px; }
+
+                .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="assets/images/tintanegra-black.png" class="logo" alt="Tinta Negra">
+                <h1>Lista de Compra Consolidada</h1>
+                <div class="meta">Generado el: ${fecha}</div>
+            </div>
+
+            ${tablaContenido}
+
+            <div class="footer">
+                Documento de uso interno - Tinta Negra Panel Administrativo
+            </div>
+        </body>
+        </html>
+    `);
+
+    ventana.document.close(); 
+    ventana.focus(); 
+
+    setTimeout(() => {
+        ventana.print();
+        ventana.close();
+    }, 500);
+}

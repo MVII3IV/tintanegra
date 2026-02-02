@@ -2,6 +2,12 @@
 require_once 'config.php';
 require_once 'id-generator.php'; 
 
+// --- CORRECCIÓN DE SEGURIDAD: DETECTAR LÍMITE DE POST EXCEDIDO ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($_POST) && empty($_FILES) && $_SERVER['CONTENT_LENGTH'] > 0) {
+    $max = ini_get('post_max_size');
+    die("Error Crítico: Los archivos son demasiado grandes. El límite actual del servidor es $max. Por favor reduce el tamaño de las imágenes o aumenta el límite en .htaccess.");
+}
+
 $uploadDir = '../uploads/';
 $colorPalettesDir = '../uploads/color_palettes/';
 $cotizacionesDir = '../uploads/cotizaciones/';
