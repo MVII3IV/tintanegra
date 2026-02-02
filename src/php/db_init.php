@@ -16,6 +16,7 @@ try {
         tallas json DEFAULT NULL,
         imagenes json DEFAULT NULL,
         paletaColor varchar(255) DEFAULT NULL,
+        prendas_surtidas TINYINT(1) DEFAULT 0,
         PRIMARY KEY (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     
@@ -61,9 +62,10 @@ try {
     
     // Lista de columnas nuevas para 'pedidos'
     $nuevasColumnasPedidos = [
-        "telefono"      => "ALTER TABLE pedidos ADD COLUMN telefono VARCHAR(20) AFTER nombre",
-        "instrucciones" => "ALTER TABLE pedidos ADD COLUMN instrucciones TEXT AFTER tallas",
-        "cotizacion"    => "ALTER TABLE pedidos ADD COLUMN cotizacion VARCHAR(255) AFTER paletaColor"
+        "telefono"         => "ALTER TABLE pedidos ADD COLUMN telefono VARCHAR(20) AFTER nombre",
+        "instrucciones"    => "ALTER TABLE pedidos ADD COLUMN instrucciones TEXT AFTER tallas",
+        "cotizacion"       => "ALTER TABLE pedidos ADD COLUMN cotizacion VARCHAR(255) AFTER paletaColor",
+        "prendas_surtidas" => "ALTER TABLE pedidos ADD COLUMN prendas_surtidas TINYINT(1) DEFAULT 0 AFTER cotizacion"
     ];
 
     foreach ($nuevasColumnasPedidos as $columna => $query) {

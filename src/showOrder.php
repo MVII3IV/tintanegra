@@ -24,9 +24,30 @@ session_start();
         #card-saldo { transition: all 0.4s ease; }
         .instrucciones-box { background-color: #fff3cd; border-left: 5px solid #ffc107; color: #856404; padding: 15px; border-radius: 8px; font-style: italic; white-space: pre-wrap; }
         
-        /* Botón de Cotización */
         .btn-cotizacion { background-color: #f8f9fa; border: 1px solid #ddd; color: #333; transition: all 0.3s; }
         .btn-cotizacion:hover { background-color: #e9ecef; border-color: #ccc; }
+
+        /* Estilo para el banner de surtido */
+        .banner-surtido {
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            border: 1px solid transparent;
+        }
+        .banner-surtido.surtido-ok {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border-color: #badbcc;
+        }
+        .banner-surtido.surtido-pending {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            border-color: #dee2e6;
+        }
 
         @media print {
             .btn, .admin-top-bar, .swiper-button-next, .swiper-button-prev, .swiper-pagination, .navbar, .modal, .no-print { 
@@ -43,6 +64,12 @@ session_start();
             .img-paleta-print { max-height: 350px !important; margin: 0 auto; display: block; break-inside: avoid; }
             .instrucciones-box { background-color: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
             .color-chip { border: 1px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .banner-surtido.surtido-ok {
+                border: 2px solid #0f5132 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
@@ -97,10 +124,10 @@ session_start();
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-md-6">
+        <div class="col-md-6 text-center">
             <div class="card-soft h-100 p-4 border shadow-sm bg-light">
                 <div class="text-center mb-3 fw-bold border-bottom pb-2 text-uppercase small">Fechas Clave</div>
-                <div class="d-flex justify-content-around text-center">
+                <div class="d-flex justify-content-around">
                     <div><small class="text-muted d-block">Inicio</small><span id="pedido-fecha-inicio" class="fw-bold"></span></div>
                     <div><small class="text-muted d-block">Entrega</small><span id="pedido-fecha-entrega" class="fw-bold text-primary"></span></div>
                 </div>
@@ -110,11 +137,11 @@ session_start();
         <div class="col-md-6">
             <div id="contenedor-pagos" class="h-100">
                 <?php if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
-                    <div class="card-soft p-4 h-100 border shadow-sm bg-white">
-                        <div class="d-flex justify-content-between mb-1 small text-muted"><span>Costo Total:</span> <span id="admin-costo-total"></span></div>
+                    <div class="card-soft p-4 h-100 border shadow-sm bg-white text-center">
+                        <div class="d-flex justify-content-between mb-1 small text-muted"><span>Total:</span> <span id="admin-costo-total"></span></div>
                         <div class="d-flex justify-content-between mb-1 small text-success"><span>Pagado:</span> <span id="admin-anticipo-pagado"></span></div>
                         <hr class="my-2">
-                        <div id="card-saldo" class="p-2 rounded-3 text-center shadow-sm">
+                        <div id="card-saldo" class="p-2 rounded-3 shadow-sm">
                             <small class="d-block opacity-75">Saldo Pendiente</small>
                             <h3 class="mb-0 fw-bold" id="admin-saldo-restante"></h3>
                         </div>
@@ -137,6 +164,9 @@ session_start();
 
     <div class="card-soft p-4 border shadow-sm mb-4">
         <div class="fw-bold mb-3 border-bottom pb-2">TALLAS Y ESPECIFICACIONES</div>
+        
+        <div id="banner-surtido-container"></div>
+
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
                 <thead class="table-light text-center">
@@ -179,6 +209,24 @@ session_start();
             document.getElementById("pedido-fecha-inicio").textContent = p.fechaInicio;
             document.getElementById("pedido-fecha-entrega").textContent = p.fechaEntrega;
 
+            // --- Lógica de Banner de Surtido ---
+            const bannerContainer = document.getElementById("banner-surtido-container");
+            if (p.prendas_surtidas == 1) {
+                bannerContainer.innerHTML = `
+                    <div class="banner-surtido surtido-ok">
+                        <i class="bx bxs-check-shield fs-4"></i>
+                        <div>PRENDAS SURTIDAS EN TALLER</div>
+                    </div>
+                `;
+            } else {
+                bannerContainer.innerHTML = `
+                    <div class="banner-surtido surtido-pending no-print">
+                        <i class="bx bx-time fs-4"></i>
+                        <div>ESPERANDO SURTIDO DE PRENDAS</div>
+                    </div>
+                `;
+            }
+
             // Lógica de Saldos
             let costo = parseFloat(p.costo || 0);
             let anticipo = parseFloat(p.anticipo || 0);
@@ -213,12 +261,9 @@ session_start();
             let totalP = 0;
             (p.tallas || []).forEach(t => {
                 totalP += parseInt(t.cantidad);
-                
-                const nombreFull = t.tipo_prenda || "Prenda estándar"; 
-                
                 tbody.innerHTML += `
                     <tr>
-                        <td class="fw-bold text-dark small" style="text-align: left;">${nombreFull}</td>
+                        <td class="fw-bold text-dark small" style="text-align: left;">${t.tipo_prenda || "Prenda estándar"}</td>
                         <td><span class="badge bg-light text-dark border">${t.talla}</span></td>
                         <td class="fw-bold">${t.cantidad}</td>
                         <td>
@@ -231,13 +276,11 @@ session_start();
             });
             document.getElementById("total-piezas").textContent = totalP;
 
-            // Paleta
+            // Paleta e Imágenes
             if (p.paletaColor) {
                 document.getElementById("pedido-paleta").src = p.paletaColor;
                 document.getElementById("pedido-paleta-print").src = p.paletaColor;
             }
-
-            // Imágenes Swiper
             const wrap = document.getElementById("pedido-imagenes");
             (p.imagenes || []).forEach(src => {
                 wrap.innerHTML += `<div class="swiper-slide"><img src="${src}" class="rounded shadow-sm" style="max-height: 300px; width:auto;"></div>`;
@@ -252,18 +295,14 @@ session_start();
             if (p.cotizacion) {
                 const cotContainer = document.getElementById("btn-cotizacion-container");
                 const esPdf = p.cotizacion.toLowerCase().endsWith('.pdf');
-                const icon = esPdf ? 'bxs-file-pdf text-danger' : 'bx-image text-success';
-                const label = esPdf ? 'Ver Cotización (PDF)' : 'Ver Cotización (Imagen)';
-                
                 cotContainer.innerHTML = `
                     <a href="${p.cotizacion}" target="_blank" class="btn btn-sm btn-cotizacion shadow-sm">
-                        <i class="bx ${icon}"></i> ${label}
+                        <i class="bx ${esPdf ? 'bxs-file-pdf text-danger' : 'bx-image text-success'}"></i> 
+                        ${esPdf ? 'Ver Cotización (PDF)' : 'Ver Cotización (Imagen)'}
                     </a>`;
             }
 
-            if (params.has('print')) {
-                setTimeout(() => { window.print(); }, 800);
-            }
+            if (params.has('print')) { setTimeout(() => { window.print(); }, 800); }
         });
     }
 </script>

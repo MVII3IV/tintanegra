@@ -170,27 +170,27 @@ function cargarPedidos(nombre = '') {
             if (data.success && data.pedidos.length > 0) {
                 pedidosCargados = data.pedidos;
 
+                // 1. Definimos el encabezado (thead) limpio
                 let html = `<div class="table-responsive"><table class="table table-hover align-middle">
                     <thead>
                         <tr class="text-muted small text-uppercase">
                             <th style="width: 40px;" class="text-center"><input type="checkbox" class="form-check-input cursor-pointer" id="checkAll"></th>
-                            <th>Cliente / Detalle</th>
+                            <th>Cliente</th>
                             <th>Entrega</th>
                             <th>Saldo</th>
                             <th>Estado</th>
+                            <th class="text-center">Surtido</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead><tbody>`;
                 
+                // 2. Generamos las filas dentro del loop forEach
                 data.pedidos.filter(p => p.status !== 'Entregada').forEach(p => {
                     if (p.status === 'En produccion') stats.produccion++;
                     if (p.status === 'Finalizada') stats.listos++;
                     if (p.fechaEntrega === hoy) stats.entregaHoy++;
                     const saldo = parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0);
                     if (saldo > 0) stats.porCobrar += saldo;
-
-                    // NOTA: Eliminamos la variable detallePrendas para limpiar la vista visualmente.
-                    // Si quieres recuperarla en el futuro, el código estaba aquí.
 
                     html += `<tr class="bg-white">
                         <td class="text-center"><input type="checkbox" class="form-check-input check-pedido cursor-pointer" value="${p.id}"></td>
@@ -200,14 +200,25 @@ function cargarPedidos(nombre = '') {
                         <td class="small">${p.fechaEntrega}</td>
                         <td class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">$${saldo.toFixed(2)}</td>
                         <td><span class="badge rounded-pill bg-light text-dark border">${p.status}</span></td>
+                        
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-surtido ${p.prendas_surtidas == 1 ? 'btn-success' : 'btn-light border'}" 
+                                    data-id="${p.id}" 
+                                    data-estado="${p.prendas_surtidas}">
+                                <i class="bx ${p.prendas_surtidas == 1 ? 'bx-check-double' : 'bx-check'}"></i>
+                            </button>
+                        </td>
+
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
                                 <button class="btn btn-sm btn-success border-0 btn-wa-preview" data-nombre="${p.nombre}" data-tel="${p.telefono}" data-link="${generarLinkWhatsApp(p)}"><i class="bx bxl-whatsapp"></i></button>
                                 <button class="btn btn-sm btn-light border edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
                                 <button class="btn btn-sm btn-light border delete-btn" data-id="${p.id}"><i class="bx bx-trash text-danger"></i></button>
                             </div>
-                        </td></tr>`;
+                        </td>
+                    </tr>`;
                 });
+
                 resultadosDiv.innerHTML = html + "</tbody></table></div>";
                 
                 document.getElementById('stat-produccion').innerText = stats.produccion;
@@ -478,6 +489,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if(btnLista) btnLista.addEventListener('click', generarResumenCompra);
 
     document.addEventListener('click', (e) => {
+        const btnSurtido = e.target.closest('.btn-surtido');
+        if (btnSurtido) {
+            const id = btnSurtido.dataset.id;
+            const estadoActual = parseInt(btnSurtido.dataset.estado);
+            const nuevoEstado = estadoActual === 1 ? 0 : 1;
+
+            const fd = new FormData();
+            fd.append('id', id);
+            fd.append('estado', nuevoEstado);
+
+            fetch('php/updateApparel.php', { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar el botón visualmente
+                        btnSurtido.dataset.estado = nuevoEstado;
+                        if (nuevoEstado === 1) {
+                            btnSurtido.classList.replace('btn-light', 'btn-success');
+                            btnSurtido.classList.remove('border');
+                            btnSurtido.innerHTML = '<i class="bx bx-check-double"></i>';
+                        } else {
+                            btnSurtido.classList.replace('btn-success', 'btn-light');
+                            btnSurtido.classList.add('border');
+                            btnSurtido.innerHTML = '<i class="bx bx-check"></i>';
+                        }
+                        
+                        // Mostrar modal de éxito rápido
+                        const modalExito = new bootstrap.Modal(document.getElementById('successModal'));
+                        modalExito.show();
+                        setTimeout(() => modalExito.hide(), 1000);
+                    }
+                });
+        }
         // Abrir modal de catálogo desde las 3 barras
         if (e.target.closest('.btn-open-catalogo')) {
             if (catalogoModal) catalogoModal.show();
