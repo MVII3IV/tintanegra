@@ -1,163 +1,17 @@
 /**
+ * admin.js (CORE)
  * Lógica del Panel Administrativo Tinta Negra
  */
 
-const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
-let pedidosCargados = []; // Almacén global de pedidos
+let pedidosCargados = []; 
 
-// --- AGREGAR ESTO AL INICIO DEL ARCHIVO (Junto a fmtMoney) ---
-const LIMIT_MB = 10; // Límite de 10 MB
+// 1. CAPTURAR ID DE LA URL (Antes de que se borre)
+const paramsURL = new URLSearchParams(window.location.search);
+let idPedidoPendiente = null;
 
-// Función para validar peso
-// Función para validar peso con Modal Bonito
-function validarPesoArchivo(input) {
-    if (input.files && input.files.length > 0) {
-        for (const file of input.files) {
-            const sizeMB = file.size / (1024 * 1024);
-            if (sizeMB > LIMIT_MB) {
-                
-                // 1. Llenar los datos del modal
-                const nameEl = document.getElementById('fileSizeName');
-                const actualEl = document.getElementById('fileSizeActual');
-                const limitEl = document.getElementById('fileSizeLimit');
-
-                if(nameEl) nameEl.textContent = file.name;
-                if(actualEl) actualEl.textContent = sizeMB.toFixed(2) + ' MB';
-                if(limitEl) limitEl.textContent = LIMIT_MB + ' MB';
-
-                // 2. Mostrar el modal
-                const modalEl = document.getElementById('fileSizeModal');
-                if (modalEl) {
-                    const modal = new bootstrap.Modal(modalEl);
-                    modal.show();
-                } else {
-                    // Fallback por si acaso no se cargó el HTML del modal
-                    alert(`⚠️ Archivo demasiado grande: "${file.name}"\nLímite: ${LIMIT_MB} MB`);
-                }
-
-                // 3. Limpiar el input para que no se suba el archivo erróneo
-                input.value = ''; 
-                return false;
-            }
-        }
-    }
-    return true;
+if (paramsURL.has('success') && paramsURL.has('id')) {
+    idPedidoPendiente = paramsURL.get('id');
 }
-
-// --- FUNCIONES AUXILIARES ---
-function generarLinkWhatsApp(p) {
-    if (!p.telefono) return '#'; 
-    const telLimpio = p.telefono.replace(/\D/g, '');
-    const host = window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://www.tintanegra.mx';
-    const urlPedido = `${host}/showOrder.php?id=${p.id}`;
-    const saldo = (p.status === 'Entregada') ? 0 : (parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0));
-    
-    const mensaje = `Hola *${p.nombre}*, te saludamos de Tinta Negra.\n\nTu pedido *${p.id}* ha cambiado a: *${p.status.toUpperCase()}*.\n\nSaldo: ${fmtMoney(saldo)}.\nDetalles: ${urlPedido}`;
-    return `https://wa.me/52${telLimpio}?text=${encodeURIComponent(mensaje)}`;
-}
-
-function calcularTotalPiezas() {
-    let total = 0;
-    document.querySelectorAll('input[name="cantidad[]"]').forEach(i => total += parseInt(i.value) || 0);
-    document.getElementById('totalPiezasAdmin').innerText = total;
-}
-
-function actualizarBotonLista() {
-    const checks = document.querySelectorAll('.check-pedido:checked');
-    const btn = document.getElementById('btnGenerarLista');
-    const contador = document.getElementById('contadorSeleccionados');
-    
-    if (btn) {
-        if (checks.length > 0) {
-            btn.style.display = 'inline-flex';
-            contador.innerText = checks.length;
-        } else {
-            btn.style.display = 'none';
-        }
-    }
-}
-
-/**
- * Genera una ventana de impresión limpia y profesional
- */
-function imprimirListaProfesional() {
-    // 1. Obtener la fecha actual formateada
-    const fecha = new Date().toLocaleDateString('es-MX', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
-
-    // 2. Obtener el contenido de la tabla generada
-    const tablaContenido = document.getElementById('listaCompraContent').innerHTML;
-
-    // 3. Crear una ventana nueva al vuelo
-    const ventana = window.open('', 'PRINT', 'height=600,width=800');
-
-    // 4. Escribir el HTML profesional
-    ventana.document.write(`
-        <html>
-        <head>
-            <title>Lista de Compra - Tinta Negra</title>
-            <style>
-                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; }
-                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .logo { max-width: 150px; margin-bottom: 10px; }
-                h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-                .meta { font-size: 12px; color: #666; margin-top: 5px; }
-                
-                /* Estilos de la Tabla Profesional */
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-                th { background-color: #f8f9fa; border-bottom: 2px solid #333; padding: 12px; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-                td { border-bottom: 1px solid #ddd; padding: 10px 12px; vertical-align: middle; }
-                
-                /* Alineación específica */
-                .text-end { text-align: right; }
-                .text-center { text-align: center; }
-                .fw-bold { font-weight: bold; }
-                .fs-5 { font-size: 1.1rem; }
-                
-                /* Ajuste para los colores al imprimir */
-                .color-circle {
-                    display: inline-block; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #999;
-                    -webkit-print-color-adjust: exact; print-color-adjust: exact;
-                }
-                
-                /* Pie de página */
-                .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <img src="assets/images/tintanegra-black.png" class="logo" alt="Tinta Negra">
-                <h1>Lista de Compra Consolidada</h1>
-                <div class="meta">Generado el: ${fecha}</div>
-            </div>
-
-            ${tablaContenido}
-
-            <div class="footer">
-                Documento de uso interno - Tinta Negra Panel Administrativo
-            </div>
-        </body>
-        </html>
-    `);
-
-    // 5. Ajustar el HTML inyectado para que se vea bien (Reemplazamos clases de bootstrap por nuestras clases simples)
-    // Esto es un truco para que los círculos de color se impriman bien sin cargar todo Bootstrap
-    let htmlLimpio = ventana.document.body.innerHTML;
-    
-    // Reemplazamos los spans de color para usar la clase .color-circle definida arriba
-    // Buscamos el patrón del span original y le inyectamos la clase nueva
-    ventana.document.close(); // Cierra el flujo de escritura
-    ventana.focus(); // Enfoca la ventana
-
-    // Espera un momento para que cargue la imagen del logo y luego imprime
-    setTimeout(() => {
-        ventana.print();
-        ventana.close();
-    }, 500);
-}
-
-// --- LÓGICA PRINCIPAL ---
 
 function cargarPedidos(nombre = '') {
     fetch(`php/getOrderByName.php?nombre=${encodeURIComponent(nombre)}`)
@@ -167,139 +21,106 @@ function cargarPedidos(nombre = '') {
             const hoy = new Date().toISOString().split('T')[0];
             const resultadosDiv = document.getElementById('resultados');
 
-            if (data.success && data.pedidos.length > 0) {
-                pedidosCargados = data.pedidos;
+            if (data.success) { // Quitamos la condición de length > 0 para que siempre entre
+                pedidosCargados = data.pedidos || [];
 
-                // 1. Definimos el encabezado (thead) limpio
+                // --- (AQUÍ VA TU CÓDIGO DE GENERAR LA TABLA - LO DEJAMOS IGUAL) ---
                 let html = `<div class="table-responsive"><table class="table table-hover align-middle">
                     <thead>
                         <tr class="text-muted small text-uppercase">
                             <th style="width: 40px;" class="text-center"><input type="checkbox" class="form-check-input cursor-pointer" id="checkAll"></th>
-                            <th>Cliente</th>
-                            <th>Entrega</th>
-                            <th>Saldo</th>
-                            <th>Estado</th>
-                            <th class="text-center">Surtido</th>
-                            <th class="text-center">Acciones</th>
+                            <th>Cliente</th> <th>Entrega</th> <th>Saldo</th> <th>Estado</th> <th class="text-center">Surtido</th> <th class="text-center">Acciones</th>
                         </tr>
                     </thead><tbody>`;
                 
-                // 2. Generamos las filas dentro del loop forEach
-                data.pedidos.filter(p => p.status !== 'Entregada').forEach(p => {
-                    if (p.status === 'En produccion') stats.produccion++;
-                    if (p.status === 'Finalizada') stats.listos++;
-                    if (p.fechaEntrega === hoy) stats.entregaHoy++;
-                    const saldo = parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0);
-                    if (saldo > 0) stats.porCobrar += saldo;
+                // Si no hay pedidos, mostrar mensaje, si sí, iterar
+                if (pedidosCargados.length === 0) {
+                    html += `<tr><td colspan="7" class="text-center py-4">Sin pedidos activos.</td></tr>`;
+                } else {
+                    pedidosCargados.filter(p => p.status !== 'Entregada').forEach(p => {
+                        // ... (Tu lógica de contadores y filas existente) ...
+                        if (p.status === 'En produccion') stats.produccion++;
+                        if (p.status === 'Finalizada') stats.listos++;
+                        if (p.fechaEntrega === hoy) stats.entregaHoy++;
+                        const saldo = parseFloat(p.costo || 0) - parseFloat(p.anticipo || 0);
+                        if (saldo > 0) stats.porCobrar += saldo;
 
-                    html += `<tr class="bg-white">
-                        <td class="text-center"><input type="checkbox" class="form-check-input check-pedido cursor-pointer" value="${p.id}"></td>
-                        <td>
-                            <a href="showOrder.php?id=${p.id}" class="fw-bold text-dark text-decoration-none d-block py-2">${p.nombre}</a>
-                        </td>
-                        <td class="small">${p.fechaEntrega}</td>
-                        <td class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">$${saldo.toFixed(2)}</td>
-                        <td><span class="badge rounded-pill bg-light text-dark border">${p.status}</span></td>
-                        
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-surtido ${p.prendas_surtidas == 1 ? 'btn-success' : 'btn-light border'}" 
-                                    data-id="${p.id}" 
-                                    data-estado="${p.prendas_surtidas}">
-                                <i class="bx ${p.prendas_surtidas == 1 ? 'bx-check-double' : 'bx-check'}"></i>
-                            </button>
-                        </td>
-
-                        <td class="text-center">
-                            <div class="d-flex justify-content-center gap-1">
-                                <button class="btn btn-sm btn-success border-0 btn-wa-preview" data-nombre="${p.nombre}" data-tel="${p.telefono}" data-link="${generarLinkWhatsApp(p)}"><i class="bx bxl-whatsapp"></i></button>
-                                <button class="btn btn-sm btn-light border edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
-                                <button class="btn btn-sm btn-light border delete-btn" data-id="${p.id}"><i class="bx bx-trash text-danger"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
-                });
-
+                        html += `<tr class="bg-white">
+                            <td class="text-center"><input type="checkbox" class="form-check-input check-pedido" value="${p.id}"></td>
+                            <td><a href="showOrder.php?id=${p.id}" class="fw-bold text-dark text-decoration-none d-block py-2">${p.nombre}</a></td>
+                            <td class="small">${p.fechaEntrega}</td>
+                            <td class="fw-bold ${saldo > 0 ? 'text-warning' : 'text-success'}">$${fmtMoney(saldo)}</td>
+                            <td><span class="badge rounded-pill bg-light text-dark border">${p.status}</span></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-surtido ${p.prendas_surtidas == 1 ? 'btn-success' : 'btn-light border'}" data-id="${p.id}" data-estado="${p.prendas_surtidas}"><i class="bx ${p.prendas_surtidas == 1 ? 'bx-check-double' : 'bx-check'}"></i></button>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button class="btn btn-sm btn-success border-0 btn-wa-preview" data-nombre="${p.nombre}" data-tel="${p.telefono}" data-link="${generarLinkWhatsApp(p)}"><i class="bx bxl-whatsapp"></i></button>
+                                    <button class="btn btn-sm btn-light border edit-btn" data-id="${p.id}"><i class="bx bx-edit"></i></button>
+                                    <button class="btn btn-sm btn-light border delete-btn" data-id="${p.id}"><i class="bx bx-trash text-danger"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                }
                 resultadosDiv.innerHTML = html + "</tbody></table></div>";
                 
+                // Actualizar Stats UI
                 document.getElementById('stat-produccion').innerText = stats.produccion;
                 document.getElementById('stat-entrega').innerText = stats.entregaHoy;
                 document.getElementById('stat-finalizados').innerText = stats.listos;
-                document.getElementById('stat-cobro').innerText = '$' + stats.porCobrar.toLocaleString('es-MX');
+                document.getElementById('stat-cobro').innerText = fmtMoney(stats.porCobrar); // Usamos fmtMoney de utils
                 
-                actualizarBotonLista();
+                if (typeof actualizarBotonLista === 'function') actualizarBotonLista();
+
+
+                // =====================================================================
+                // SOLUCIÓN: LÓGICA DE NOTIFICACIÓN CON "PLAN B"
+                // =====================================================================
+                if (idPedidoPendiente) {
+                    
+                    // INTENTO 1: Buscar en la lista cargada (Plan A)
+                    const pReal = pedidosCargados.find(item => String(item.id) === String(idPedidoPendiente));
+                    
+                    if (pReal && pReal.status === 'Entregada') {
+                        // Si está en la lista (raro, pero posible), lanzamos
+                        lanzarModalConDelay(pReal);
+                    } else {
+                        // INTENTO 2: PLAN B (Búsqueda Individual)
+                        // Como PHP filtró el pedido "Entregada", pedimos sus datos específicamente
+                        fetch(`php/editor.php?id=${idPedidoPendiente}`)
+                            .then(r => r.json())
+                            .then(d => {
+                                if (d.success && d.pedido && d.pedido.status === 'Entregada') {
+                                    // ¡Lo encontramos individualmente! Lanzamos notificación
+                                    lanzarModalConDelay(d.pedido);
+                                }
+                            });
+                    }
+                }
+                // =====================================================================
 
             } else {
                 pedidosCargados = [];
-                resultadosDiv.innerHTML = '<p class="text-center py-4">Sin pedidos activos.</p>';
+                resultadosDiv.innerHTML = '<p class="text-center py-4">Error al cargar datos.</p>';
             }
         });
 }
 
-function generarResumenCompra() {
-    const seleccionados = Array.from(document.querySelectorAll('.check-pedido:checked')).map(cb => cb.value);
-    if (seleccionados.length === 0) return;
-
-    const pedidosFiltrados = pedidosCargados.filter(p => seleccionados.includes(p.id.toString()));
-    const consolidado = {};
-
-    pedidosFiltrados.forEach(p => {
-        if (p.tallas && p.tallas.length > 0) {
-            p.tallas.forEach(t => {
-                const clave = `${t.prenda_id}_${t.talla}_${t.color}`;
-                if (!consolidado[clave]) {
-                    consolidado[clave] = {
-                        nombre: t.nombre_prenda || 'Prenda Desconocida',
-                        talla: t.talla,
-                        color: t.color,
-                        cantidad: 0
-                    };
-                }
-                consolidado[clave].cantidad += parseInt(t.cantidad);
-            });
+// Función auxiliar para esperar al modal verde
+function lanzarModalConDelay(pedido) {
+    setTimeout(() => {
+        if (typeof dispararNotificacionWhatsApp === 'function') {
+            dispararNotificacionWhatsApp(pedido);
         }
-    });
-
-    // Hemos agregado '-webkit-print-color-adjust: exact' y 'print-color-adjust: exact' al span del color
-    let html = `<div class="table-responsive"><table class="table table-bordered align-middle text-center">
-        <thead class="table-dark">
-            <tr>
-                <th style="text-align: left;">Prenda</th>
-                <th>Color</th>
-                <th>Talla</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>`;
-    
-    Object.values(consolidado).sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(item => {
-        html += `<tr>
-            <td class="fw-bold" style="text-align: left;">${item.nombre}</td>
-            <td>
-                <span class="d-inline-block border rounded-circle shadow-sm" 
-                      style="width:25px; height:25px; background-color:${item.color}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                </span>
-            </td>
-            <td><span class="badge bg-secondary fs-6">${item.talla}</span></td>
-            <td class="fw-bold fs-5 text-primary">${item.cantidad}</td>
-        </tr>`;
-    });
-    
-    html += `</tbody></table></div>`;
-    document.getElementById('listaCompraContent').innerHTML = html;
-    
-    const modalEl = document.getElementById('modalListaCompra');
-    if(modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
+        idPedidoPendiente = null; // Limpiamos variable
+    }, 2200);
 }
 
 // --- GESTIÓN DE TALLAS ---
-
 function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '', isCopy = false) {
     const tallasContainer = document.getElementById('tallasContainer');
-    
-    // Lógica para copiar última fila
     if (isCopy === true && talla === '' && prendaId === '') {
         const filas = tallasContainer.querySelectorAll('.talla-entry');
         if (filas.length > 0) {
@@ -310,616 +131,27 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
             cantidad = 1;
         }
     }
-
     const div = document.createElement('div');
     div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
     
-    const listaOrdenada = [...(window.catalogoPrendas || [])].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
-
-    let prendasHtml = `<option value="">-- Prenda --</option>`;
-    listaOrdenada.forEach(p => {
-        const selected = (p.id == prendaId) ? 'selected' : '';
-        const desc = p.descripcion ? ` - ${p.descripcion}` : '';
-        prendasHtml += `<option value="${p.id}" ${selected}>${p.tipo_prenda} ${p.marca} (${p.modelo})${desc}</option>`;
+    // Generar opciones (Asumiendo window.catalogoPrendas existe)
+    let opts = '<option value="">-- Prenda --</option>';
+    [...(window.catalogoPrendas||[])].sort((a,b)=>a.tipo_prenda.localeCompare(b.tipo_prenda)).forEach(p=>{
+        opts+=`<option value="${p.id}" ${p.id==prendaId?'selected':''}>${p.tipo_prenda} ${p.marca} (${p.modelo})</option>`;
     });
+    
+    let tallasOpts = '<option value="">-- Talla --</option>';
+    ['XS','S','M','L','XL','XXL'].forEach(t=> tallasOpts+=`<option value="${t}" ${t==talla?'selected':''}>${t}</option>`);
 
-    const tallasFijas = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-    let tallasHtml = `<option value="">-- Talla --</option>`;
-    tallasFijas.forEach(t => {
-        const selected = (t == talla) ? 'selected' : '';
-        tallasHtml += `<option value="${t}" ${selected}>${t}</option>`;
-    });
-
-    // AQUI ESTÁ EL HTML LIMPIO (Sin el botón de menú al inicio)
-    div.innerHTML = `
-        <select class="form-select form-select-sm" name="prenda_id[]" required style="flex: 2;">${prendasHtml}</select>
-        <select class="form-select form-select-sm" name="talla[]" required style="flex: 1;">${tallasHtml}</select>
-        <input type="number" class="form-control form-control-sm" name="cantidad[]" value="${cantidad}" min="1" style="width: 70px;">
-        <input type="color" class="form-control form-control-color border-0" name="color[]" value="${color}" style="width: 40px;">
+    div.innerHTML = `<select class="form-select form-select-sm" name="prenda_id[]" style="flex:2" required>${opts}</select>
+        <select class="form-select form-select-sm" name="talla[]" style="flex:1" required>${tallasOpts}</select>
+        <input type="number" class="form-control form-control-sm" name="cantidad[]" value="${cantidad}" min="1" style="width:70px">
+        <input type="color" class="form-control form-control-color border-0" name="color[]" value="${color}" style="width:40px">
         <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>`;
     
     tallasContainer.appendChild(div);
-    div.querySelector('input[name="cantidad[]"]').addEventListener('input', calcularTotalPiezas);
-    calcularTotalPiezas();
-}
-
-// --- REEMPLAZAR ESTA FUNCIÓN COMPLETA ---
-
-function recargarCatalogoAjax() {
-    fetch('php/catalog_management.php?accion=listar')
-        .then(r => r.json())
-        .then(data => {
-            if(data.success) {
-                // 1. Actualizar la "memoria" global del catálogo
-                window.catalogoPrendas = data.catalogo || [];
-                
-                // 2. Actualizar la tabla visual dentro del modal (si está abierto)
-                const tbody = document.getElementById('listaCatalogo');
-                if(tbody) {
-                    tbody.innerHTML = '';
-                    data.catalogo.forEach(r => {
-                        const row = document.createElement('tr');
-                        row.id = `prenda-${r.id}`;
-                        row.innerHTML = `
-                            <td>${r.tipo_prenda}</td>
-                            <td>${r.marca}</td>
-                            <td>${r.modelo}</td>
-                            <td class="text-muted small"><em>${r.descripcion || ''}</em></td>
-                            <td><span class="badge-catalogo">${r.genero}</span></td>
-                            <td>${fmtMoney(parseFloat(r.costo_base))}</td>
-                            <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-eliminar-prenda" data-id="${r.id}"><i class="bx bx-trash"></i></button>
-                            </td>`;
-                        tbody.appendChild(row);
-                    });
-                }
-
-                // 3. ¡NUEVO! Actualizar los selectores de prendas YA visibles en la pantalla
-                // Buscamos todos los selects de prendas que haya en el formulario
-                const selectsExistentes = document.querySelectorAll('select[name="prenda_id[]"]');
-                
-                selectsExistentes.forEach(select => {
-                    const valorSeleccionadoPrevio = select.value; // Guardamos lo que tenía seleccionado el usuario
-                    
-                    // Ordenamos alfabéticamente
-                    const listaOrdenada = [...window.catalogoPrendas].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
-                    
-                    // Reconstruimos las opciones
-                    let htmlOpciones = `<option value="">-- Prenda --</option>`;
-                    listaOrdenada.forEach(p => {
-                        // Si es la prenda que acabamos de agregar o la que ya tenía seleccionada, la marcamos
-                        const selected = (p.id == valorSeleccionadoPrevio) ? 'selected' : '';
-                        const desc = p.descripcion ? ` - ${p.descripcion}` : '';
-                        htmlOpciones += `<option value="${p.id}" ${selected}>${p.tipo_prenda} ${p.marca} (${p.modelo})${desc}</option>`;
-                    });
-                    
-                    // Inyectamos las nuevas opciones
-                    select.innerHTML = htmlOpciones;
-                    
-                    // Restauramos el valor seleccionado (si aún existe)
-                    select.value = valorSeleccionadoPrevio;
-                });
-            }
-        });
-}
-
-// --- INICIALIZACIÓN ---
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    // --- NUEVO: DETECTAR SI SE GUARDÓ CON ÉXITO ---
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('success')) {
-        const modalExito = new bootstrap.Modal(document.getElementById('successModal'));
-        modalExito.show();
-
-        // 1. Cerrar automáticamente a los 2 segundos
-        setTimeout(() => {
-            modalExito.hide();
-        }, 2000);
-
-        // 2. Limpiar la URL (para que no salga otra vez si refrescas la página)
-        const nuevaUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, nuevaUrl);
-    }
-
-    // 2. Activar "Guardia de Seguridad" de 10MB en todos los inputs de archivo
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        input.addEventListener('change', function() { 
-            validarPesoArchivo(this); 
-        });
+    div.querySelector('input[name="cantidad[]"]').addEventListener('input', () => {
+        if (typeof calcularTotalPiezas === 'function') calcularTotalPiezas();
     });
-
-    const initModal = (id) => { const el = document.getElementById(id); return el ? new bootstrap.Modal(el) : null; };
-
-    const waModal = initModal('waModal');
-    const deleteModal = initModal('deleteModal');
-    const confirmUpdateModal = initModal('confirmUpdateModal');
-    const catalogoModal = initModal('modalCatalogo');
-    let idToDelete = null;
-    let idCatalogoToDelete = null; 
-
-    // --- NUEVO: PREVISUALIZAR IMÁGENES LOCALES (AL SELECCIONAR) ---
-    const activarPrevisualizacion = (inputId, containerId) => {
-        const input = document.getElementById(inputId);
-        const container = document.getElementById(containerId);
-        
-        if (input && container) {
-            input.addEventListener('change', function() {
-                // 1. Limpiamos el contenedor (para no duplicar si eligen de nuevo)
-                container.innerHTML = '';
-
-                // 2. Recorremos los archivos seleccionados
-                if (this.files && this.files.length > 0) {
-                    Array.from(this.files).forEach(file => {
-                        const reader = new FileReader();
-                        
-                        // Detectamos si es PDF para poner icono, o imagen para poner foto
-                        if (file.type === 'application/pdf') {
-                            const div = document.createElement('div');
-                            div.innerHTML = `<button type="button" class="btn btn-sm btn-outline-danger shadow-sm" disabled><i class="bx bxs-file-pdf"></i> ${file.name.substring(0, 8)}...</button>`;
-                            container.appendChild(div);
-                        } else if (file.type.startsWith('image/')) {
-                            reader.onload = (e) => {
-                                const div = document.createElement('div');
-                                div.innerHTML = `<img src="${e.target.result}" class="rounded border shadow-sm" title="${file.name}" style="width:60px; height:60px; object-fit:cover;">`;
-                                container.appendChild(div);
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
-                }
-            });
-        }
-    };
-
-    // Activamos la función para los 3 campos de archivo
-    activarPrevisualizacion('imagenes', 'imagenesPreview');
-    activarPrevisualizacion('paletaColor', 'paletaColorPreview');
-    activarPrevisualizacion('cotizacion', 'cotizacionPreview');
-    // ---------------------------------------------------------------
-
-    cargarPedidos();
-    addTallaEntry();
-
-    document.getElementById('addTalla').addEventListener('click', () => addTallaEntry('', 1, '#000000', '', true));
-    document.getElementById('buscadorNombre').addEventListener('input', (e) => cargarPedidos(e.target.value));
-
-    const btnLista = document.getElementById('btnGenerarLista');
-    if(btnLista) btnLista.addEventListener('click', generarResumenCompra);
-
-    document.addEventListener('click', (e) => {
-        const btnSurtido = e.target.closest('.btn-surtido');
-        if (btnSurtido) {
-            const id = btnSurtido.dataset.id;
-            const estadoActual = parseInt(btnSurtido.dataset.estado);
-            const nuevoEstado = estadoActual === 1 ? 0 : 1;
-
-            const fd = new FormData();
-            fd.append('id', id);
-            fd.append('estado', nuevoEstado);
-
-            fetch('php/updateApparel.php', { method: 'POST', body: fd })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        // Actualizar el botón visualmente
-                        btnSurtido.dataset.estado = nuevoEstado;
-                        if (nuevoEstado === 1) {
-                            btnSurtido.classList.replace('btn-light', 'btn-success');
-                            btnSurtido.classList.remove('border');
-                            btnSurtido.innerHTML = '<i class="bx bx-check-double"></i>';
-                        } else {
-                            btnSurtido.classList.replace('btn-success', 'btn-light');
-                            btnSurtido.classList.add('border');
-                            btnSurtido.innerHTML = '<i class="bx bx-check"></i>';
-                        }
-                        
-                        // Mostrar modal de éxito rápido
-                        const modalExito = new bootstrap.Modal(document.getElementById('successModal'));
-                        modalExito.show();
-                        setTimeout(() => modalExito.hide(), 1000);
-                    }
-                });
-        }
-        // Abrir modal de catálogo desde las 3 barras
-        if (e.target.closest('.btn-open-catalogo')) {
-            if (catalogoModal) catalogoModal.show();
-        }
-
-        const btnWA = e.target.closest('.btn-wa-preview');
-        if (btnWA) {
-            const link = btnWA.getAttribute('data-link');
-            const urlObj = new URL(link);
-            document.getElementById('wa-destinatario').innerText = btnWA.getAttribute('data-nombre');
-            document.getElementById('wa-mensaje-pre').value = decodeURIComponent(urlObj.searchParams.get("text"));
-            document.getElementById('wa-confirmar-link').dataset.tel = btnWA.getAttribute('data-tel').replace(/\D/g, '');
-            if(waModal) waModal.show();
-        }
-
-       // --- BLOQUE DE EDICIÓN ACTUALIZADO (CON PREVIEWS) ---
-        const btnEdit = e.target.closest('.edit-btn');
-        if (btnEdit) {
-            const id = btnEdit.getAttribute('data-id');
-            fetch(`php/editor.php?id=${id}`).then(res => res.json()).then(data => {
-                if (data.success) {
-                    const p = data.pedido;
-                    
-                    // 1. Llenar campos de texto
-                    document.getElementById('pedidoId').value = p.id;
-                    document.getElementById('nombrePedido').value = p.nombre;
-                    document.getElementById('telefono').value = p.telefono || '';
-                    document.getElementById('status').value = p.status;
-                    document.getElementById('fechaInicio').value = p.fechaInicio;
-                    document.getElementById('fechaEntrega').value = p.fechaEntrega;
-                    document.getElementById('costo').value = p.costo;
-                    document.getElementById('anticipo').value = p.anticipo;
-                    document.getElementById('instrucciones').value = p.instrucciones || '';
-                    
-                    // 2. Llenar tallas
-                    const tallasContainer = document.getElementById('tallasContainer');
-                    tallasContainer.innerHTML = '';
-                    if (p.tallas && p.tallas.length > 0) {
-                        p.tallas.forEach(t => {
-                            // Usamos p.prenda_id si existe
-                            addTallaEntry(t.talla, t.cantidad, t.color, t.prenda_id || '', false);
-                        });
-                    }
-
-                    // 3. NUEVO: MOSTRAR MINIATURAS (PREVIEWS)
-                    const renderPreview = (containerId, content, isArray = false) => {
-                        const container = document.getElementById(containerId);
-                        if (!container) return;
-                        container.innerHTML = ''; // Limpiar lo anterior
-
-                        let items = [];
-                        // Si es array (como imágenes generales) parseamos el JSON, si es simple (como paleta) lo usamos directo
-                        if (isArray) {
-                            try { items = (typeof content === 'string') ? JSON.parse(content) : content; } catch(e) { items = []; }
-                        } else if (content) {
-                            items = [content];
-                        }
-                        
-                        if (!Array.isArray(items)) items = [];
-
-                        items.forEach(url => {
-                            if (!url) return;
-                            const isPdf = url.toLowerCase().endsWith('.pdf');
-                            const el = document.createElement('div');
-                            
-                            // Creamos la miniatura o el icono de PDF
-                            if (isPdf) {
-                                el.innerHTML = `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm" title="Ver PDF"><i class="bx bxs-file-pdf"></i> PDF</a>`;
-                            } else {
-                                el.innerHTML = `<a href="${url}" target="_blank"><img src="${url}" class="rounded border shadow-sm" title="Clic para ver grande" style="width:60px; height:60px; object-fit:cover; cursor:zoom-in;"></a>`;
-                            }
-                            container.appendChild(el);
-                        });
-                    };
-
-                    // Ejecutamos para las 3 secciones
-                    renderPreview('imagenesPreview', p.imagenes, true);
-                    renderPreview('paletaColorPreview', p.paletaColor);
-                    renderPreview('cotizacionPreview', p.cotizacion);
-
-                    // 4. Actualizar título y botón
-                    document.getElementById('formHeader').innerText = "Editando Pedido #" + p.id;
-                    document.getElementById('submitButton').innerText = "Actualizar Pedido";
-                    
-                    // Subir suavemente al inicio del formulario
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
-        if (e.target.closest('.delete-btn')) {
-            idToDelete = e.target.closest('.delete-btn').getAttribute('data-id');
-            if(deleteModal) deleteModal.show();
-        }
-
-        if (e.target.closest('.remove-talla')) {
-            e.target.closest('.talla-entry').remove();
-            calcularTotalPiezas();
-        }
-
-        if (e.target.closest('.btn-eliminar-prenda')) {
-            // Guardamos el ID en la variable nueva
-            idCatalogoToDelete = e.target.closest('.btn-eliminar-prenda').getAttribute('data-id');
-            
-            // Abrimos el modal bonito en lugar del confirm()
-            const modal = new bootstrap.Modal(document.getElementById('deleteCatalogoModal'));
-            modal.show();
-        }
-
-        const btnBorrarCat = document.getElementById('btnConfirmarBorrarCatalogo');
-        if (btnBorrarCat) {
-            btnBorrarCat.addEventListener('click', () => {
-                if (!idCatalogoToDelete) return;
-
-                const fd = new FormData(); 
-                fd.append('accion', 'eliminar'); 
-                fd.append('id', idCatalogoToDelete);
-
-                fetch('php/catalog_management.php', { method: 'POST', body: fd })
-                .then(r => r.json()).then(d => { 
-                    if(d.success) {
-                        // 1. Cerrar el modal de confirmación
-                        const modalEl = document.getElementById('deleteCatalogoModal');
-                        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                        modalInstance.hide();
-
-                        // 2. Borrar la fila visualmente (para feedback instantáneo)
-                        const row = document.getElementById(`prenda-${idCatalogoToDelete}`);
-                        if(row) row.remove();
-
-                        // 3. Recargar el catálogo y selectores
-                        recargarCatalogoAjax(); 
-
-                        // 4. Mostrar el modal de Éxito
-                        const successModalEl = document.getElementById('successModal');
-                        if(successModalEl) {
-                            const modalExito = new bootstrap.Modal(successModalEl);
-                            modalExito.show();
-                            setTimeout(() => modalExito.hide(), 1500);
-                        }
-                    } else {
-                        alert('Error al eliminar: ' + (d.error || 'Desconocido'));
-                    }
-                })
-                .catch(err => console.error('Error:', err));
-            });
-        }
-    });
-
-    document.addEventListener('change', (e) => {
-        if (e.target.id === 'checkAll') {
-            const checkboxes = document.querySelectorAll('.check-pedido');
-            checkboxes.forEach(cb => cb.checked = e.target.checked);
-            actualizarBotonLista();
-        }
-        if (e.target.classList.contains('check-pedido')) {
-            actualizarBotonLista();
-        }
-    });
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-        fetch(`php/deleteOrder.php?id=${idToDelete}`, { method: 'DELETE' })
-        .then(res => res.json()).then(data => { 
-            if (data.success) { 
-                if(deleteModal) deleteModal.hide(); 
-                cargarPedidos(); 
-            } 
-        });
-    });
-
-    document.getElementById('formNuevaPrenda').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-        const fd = new FormData(form);
-        fd.append('accion', 'guardar');
-        
-        fetch('php/catalog_management.php', { method: 'POST', body: fd })
-        .then(r => r.json()).then(d => { 
-            if(d.success) {
-                form.reset();
-                recargarCatalogoAjax();
-            } else {
-                alert('Error: ' + d.error);
-            }
-        });
-    });
-    
-    const btnWaLink = document.getElementById('wa-confirmar-link');
-    if(btnWaLink) {
-        btnWaLink.addEventListener('mousedown', function() {
-            const tel = this.dataset.tel;
-            const msj = document.getElementById('wa-mensaje-pre').value;
-            this.href = `https://wa.me/52${tel}?text=${encodeURIComponent(msj)}`;
-        });
-    }
-    
-});
-
-
-function obtenerNombreColor(hexInput) {
-    // Si no hay input o es inválido, regresamos tal cual
-    if (!hexInput || !hexInput.startsWith('#')) return hexInput;
-
-    // 1. Función interna para convertir Hex a RGB
-    const hexToRgb = (hex) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-    };
-
-    // 2. Paleta Maestra de Colores (Agrega aquí todos los que quieras reconocer)
-    const baseColors = [
-{ hex: "#000000", name: "Negro" },
-        { hex: "#ffffff", name: "Blanco" },
-        { hex: "#ff0000", name: "Rojo" },
-        { hex: "#dc143c", name: "Rojo Carmesí" },
-        { hex: "#800000", name: "Vino" },
-        { hex: "#0000ff", name: "Azul Rey" },
-        { hex: "#000080", name: "Azul Marino" },
-        { hex: "#87ceeb", name: "Azul Cielo" },
-        { hex: "#ffff00", name: "Amarillo" },
-        { hex: "#008000", name: "Verde" },
-        { hex: "#006400", name: "Verde Botella" },
-        { hex: "#808080", name: "Gris" },
-        { hex: "#d3d3d3", name: "Gris Jaspe" },
-        { hex: "#ffa500", name: "Naranja" },
-        { hex: "#800080", name: "Morado" },
-        { hex: "#ffc0cb", name: "Rosa" },
-        { hex: "#ff1493", name: "Rosa Mexicano" },
-        { hex: "#f5f5dc", name: "Beige" },       // Beige claro
-        { hex: "#e3dac9", name: "Beige" },       // <--- AGREGADO: Tono "Arena" o "Hueso" (atrapa los que se iban a Gris)
-        { hex: "#c2b280", name: "Arena" },       // <--- AGREGADO: Tono Arena más oscuro (Khaki)
-        { hex: "#a52a2a", name: "Café" },
-        { hex: "#40e0d0", name: "Turquesa" }
-    ];
-
-    // 3. Algoritmo de distancia (Busca el "vecino" más cercano)
-    const inputRgb = hexToRgb(hexInput);
-    let closestName = hexInput;
-    let minDistance = Infinity;
-
-    baseColors.forEach(base => {
-        const baseRgb = hexToRgb(base.hex);
-        // Distancia Euclidiana: Raíz cuadrada de la suma de las diferencias al cuadrado
-        const dist = Math.sqrt(
-            Math.pow(inputRgb.r - baseRgb.r, 2) +
-            Math.pow(inputRgb.g - baseRgb.g, 2) +
-            Math.pow(inputRgb.b - baseRgb.b, 2)
-        );
-
-        if (dist < minDistance) {
-            minDistance = dist;
-            closestName = base.name;
-        }
-    });
-
-    // Opcional: Si quieres mostrar también el código original para referencia
-    // return `${closestName} <span style="font-size:0.8em; opacity:0.5">(${hexInput})</span>`;
-    
-    return closestName;
-}
-
-/**
- * ACTUALIZADA: Generar Lista con nombre de color
- */
-function generarResumenCompra() {
-    const seleccionados = Array.from(document.querySelectorAll('.check-pedido:checked')).map(cb => cb.value);
-    if (seleccionados.length === 0) return;
-
-    const pedidosFiltrados = pedidosCargados.filter(p => seleccionados.includes(p.id.toString()));
-    const consolidado = {};
-
-    pedidosFiltrados.forEach(p => {
-        if (p.tallas && p.tallas.length > 0) {
-            p.tallas.forEach(t => {
-                const clave = `${t.prenda_id}_${t.talla}_${t.color}`;
-                if (!consolidado[clave]) {
-                    consolidado[clave] = {
-                        nombre: t.nombre_prenda || 'Prenda Desconocida',
-                        talla: t.talla,
-                        color: t.color,
-                        cantidad: 0
-                    };
-                }
-                consolidado[clave].cantidad += parseInt(t.cantidad);
-            });
-        }
-    });
-
-    let html = `<div class="table-responsive"><table class="table table-bordered align-middle text-center">
-        <thead class="table-dark">
-            <tr>
-                <th style="text-align: left;">Prenda</th>
-                <th style="text-align: left;">Color</th> <th>Talla</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>`;
-    
-    Object.values(consolidado).sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(item => {
-        const nombreColor = obtenerNombreColor(item.color); // Obtenemos el nombre
-        
-        html += `<tr>
-            <td class="fw-bold" style="text-align: left;">${item.nombre}</td>
-            <td style="text-align: left;">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="d-inline-block border rounded-circle shadow-sm" 
-                          style="width:25px; height:25px; background-color:${item.color}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                    </span>
-                    <span class="small fw-bold text-muted">${nombreColor}</span>
-                </div>
-            </td>
-            <td><span class="badge bg-secondary fs-6">${item.talla}</span></td>
-            <td class="fw-bold fs-5 text-primary">${item.cantidad}</td>
-        </tr>`;
-    });
-    
-    html += `</tbody></table></div>`;
-    document.getElementById('listaCompraContent').innerHTML = html;
-    
-    const modalEl = document.getElementById('modalListaCompra');
-    if(modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
-}
-
-/**
- * ACTUALIZADA: Imprimir (Arregla círculos invisibles)
- */
-function imprimirListaProfesional() {
-    const fecha = new Date().toLocaleDateString('es-MX', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
-
-    const tablaContenido = document.getElementById('listaCompraContent').innerHTML;
-    const ventana = window.open('', 'PRINT', 'height=600,width=800');
-
-    ventana.document.write(`
-        <html>
-        <head>
-            <title>Lista de Compra - Tinta Negra</title>
-            <style>
-                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; }
-                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .logo { max-width: 150px; margin-bottom: 10px; }
-                h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-                .meta { font-size: 12px; color: #666; margin-top: 5px; }
-                
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-                th { background-color: #f8f9fa; border-bottom: 2px solid #333; padding: 12px; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-                td { border-bottom: 1px solid #ddd; padding: 10px 12px; vertical-align: middle; }
-                
-                /* --- ESTO ARREGLA LOS CÍRCULOS INVISIBLES --- */
-                /* Forzamos que los spans dentro de la tabla tengan tamaño y forma */
-                td span[style*="background-color"] {
-                    display: inline-block !important;
-                    width: 20px !important; 
-                    height: 20px !important;
-                    border-radius: 50% !important;
-                    border: 1px solid #999 !important;
-                    vertical-align: middle;
-                    margin-right: 8px;
-                }
-                
-                /* Estilos auxiliares para el texto del color */
-                .small { font-size: 0.9em; }
-                .text-muted { color: #555; }
-                .fw-bold { font-weight: bold; }
-                .text-primary { color: #000; font-weight: 900; } /* En negro para imprimir mejor */
-                
-                /* Ocultamos cosas de bootstrap que no sirven aquí */
-                .d-flex { display: block; } 
-                .badge { border: 1px solid #333; padding: 2px 6px; border-radius: 4px; }
-
-                .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <img src="assets/images/tintanegra-black.png" class="logo" alt="Tinta Negra">
-                <h1>Lista de Compra Consolidada</h1>
-                <div class="meta">Generado el: ${fecha}</div>
-            </div>
-
-            ${tablaContenido}
-
-            <div class="footer">
-                Documento de uso interno - Tinta Negra Panel Administrativo
-            </div>
-        </body>
-        </html>
-    `);
-
-    ventana.document.close(); 
-    ventana.focus(); 
-
-    setTimeout(() => {
-        ventana.print();
-        ventana.close();
-    }, 500);
+    if (typeof calcularTotalPiezas === 'function') calcularTotalPiezas();
 }

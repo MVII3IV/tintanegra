@@ -211,6 +211,10 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
     // Pasamos variables PHP a JavaScript globalmente antes de cargar el archivo externo
     window.catalogoPrendas = <?= json_encode($prendasCatalogo) ?>;
 </script>
+<script src="assets/js/events.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/catalog-print.js"></script>
 <script src="assets/js/admin.js"></script>
 
 </body>
