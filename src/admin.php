@@ -93,6 +93,11 @@ $prendasCatalogo = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
                     <span id="contadorSeleccionados" class="badge bg-dark rounded-pill">0</span>
                 </button>
 
+                <a href="analytics.php" class="btn btn-outline-primary shadow-sm d-flex align-items-center gap-2" style="border-radius: 8px;">
+                    <i class='bx bx-line-chart fs-5'></i> 
+                    <span class="d-none d-sm-inline fw-medium">Analytics</span>
+                </a>
+
                 <a href="orders.php" class="btn btn-white border shadow-sm text-dark d-flex align-items-center gap-2" style="border-radius: 8px; background: #fff;">
                     <i class="bx bx-list-ul fs-5 text-primary"></i> 
                     <span class="d-none d-sm-inline fw-medium">Ver Historial</span>
