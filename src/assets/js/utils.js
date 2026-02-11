@@ -2,31 +2,18 @@ const fmtMoney = (n) => n.toLocaleString("es-MX", { style: "currency", currency:
 const LIMIT_MB = 10; 
 
 function validarPesoArchivo(input) {
+    const LIMIT_MB = 10;
     if (input.files && input.files.length > 0) {
         for (const file of input.files) {
             const sizeMB = file.size / (1024 * 1024);
             if (sizeMB > LIMIT_MB) {
-                
-                // 1. Llenar los datos del modal
-                const nameEl = document.getElementById('fileSizeName');
-                const actualEl = document.getElementById('fileSizeActual');
-                const limitEl = document.getElementById('fileSizeLimit');
+                document.getElementById('fileSizeName').textContent = file.name;
+                document.getElementById('fileSizeActual').textContent = sizeMB.toFixed(2) + ' MB';
+                document.getElementById('fileSizeLimit').textContent = LIMIT_MB + ' MB';
 
-                if(nameEl) nameEl.textContent = file.name;
-                if(actualEl) actualEl.textContent = sizeMB.toFixed(2) + ' MB';
-                if(limitEl) limitEl.textContent = LIMIT_MB + ' MB';
-
-                // 2. Mostrar el modal
                 const modalEl = document.getElementById('fileSizeModal');
-                if (modalEl) {
-                    const modal = new bootstrap.Modal(modalEl);
-                    modal.show();
-                } else {
-                    // Fallback por si acaso no se cargó el HTML del modal
-                    alert(`⚠️ Archivo demasiado grande: "${file.name}"\nLímite: ${LIMIT_MB} MB`);
-                }
-
-                // 3. Limpiar el input para que no se suba el archivo erróneo
+                if (modalEl) new bootstrap.Modal(modalEl).show();
+                
                 input.value = ''; 
                 return false;
             }

@@ -130,13 +130,17 @@
     </div>
 </div>
 
-<div class="modal fade" id="fileSizeModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm"> <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+<div class="modal fade" id="validationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title w-100 text-center" id="fileSizeTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 15px; top: 15px;"></button>
+                <h5 class="modal-title w-100 text-center">
+                    <i class='bx bx-error-circle text-danger' style='font-size: 3rem;'></i><br>
+                    <span class="text-dark fw-bolder h5">¡Atención!</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="position: absolute; right: 15px; top: 15px;"></button>
             </div>
-            <div class="modal-body text-center p-4" id="fileSizeBody">
+            <div class="modal-body text-center p-4" id="validationBody">
                 </div>
             <div class="modal-footer border-0 pt-0 justify-content-center">
                 <button type="button" class="btn btn-dark px-4 fw-bold rounded-pill" data-bs-dismiss="modal">Entendido</button>
@@ -144,3 +148,29 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="fileSizeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title w-100 text-center">
+                    <i class='bx bx-cloud-upload text-warning' style='font-size: 3rem;'></i><br>
+                    <span class="text-dark fw-bolder h5">Archivo muy pesado</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="position: absolute; right: 15px; top: 15px;"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="text-muted small mb-3">El archivo <strong id="fileSizeName" class="text-dark"></strong> es demasiado grande.</p>
+                <div class="bg-light p-2 rounded-3 mb-3 small">
+                    <div>Tu archivo: <strong id="fileSizeActual" class="text-danger"></strong></div>
+                    <div>Límite: <strong id="fileSizeLimit" class="text-success">10 MB</strong></div>
+                </div>
+                <p class="text-muted" style="font-size: 0.75rem;">Optimiza tu imagen o sube una más ligera.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center">
+                <button type="button" class="btn btn-warning text-dark px-4 fw-bold rounded-pill" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+

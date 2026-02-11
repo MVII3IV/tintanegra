@@ -10,19 +10,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('success')) {
         if (urlParams.has('id')) {
-            // Pasamos el ID a la variable global de admin.js
-            // Asegúrate de que admin.js defina esta variable globalmente
+            // Pasamos el ID a la variable global de admin.js si existe
             if(typeof idPedidoPendiente !== 'undefined') {
                  idPedidoPendiente = urlParams.get('id'); 
             }
         }
 
-        const modalExito = new bootstrap.Modal(document.getElementById('successModal'));
-        modalExito.show();
-
-        setTimeout(() => {
-            modalExito.hide();
-        }, 2000);
+        const modalExitoEl = document.getElementById('successModal');
+        if(modalExitoEl) {
+            const modalExito = new bootstrap.Modal(modalExitoEl);
+            modalExito.show();
+            setTimeout(() => {
+                modalExito.hide();
+            }, 2000);
+        }
 
         const nuevaUrl = window.location.pathname;
         window.history.replaceState({}, document.title, nuevaUrl);
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 3. INICIALIZACIÓN DE MODALES Y VARIABLES ---
-    // Verificamos existencia antes de instanciar para evitar errores en consolas limpias
+    // Instanciamos de forma segura comprobando que existan los elementos
     const waModalEl = document.getElementById('waModal');
     const waModal = waModalEl ? new bootstrap.Modal(waModalEl) : null;
     
@@ -74,6 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalogoModalEl = document.getElementById('modalCatalogo');
     const catalogoModal = catalogoModalEl ? new bootstrap.Modal(catalogoModalEl) : null;
     
+    // Este es el nuevo modal para validación
+    const validationModalEl = document.getElementById('validationModal');
+    const validationModal = validationModalEl ? new bootstrap.Modal(validationModalEl) : null;
+
     let idToDelete = null;
     let idCatalogoToDelete = null; 
 
@@ -151,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                     
+                    // Render previews
                     const renderPreview = (cid, content, isArray=false) => {
                         const c = document.getElementById(cid); if(!c) return; c.innerHTML='';
                         let items = [];
@@ -218,8 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnDelCat = e.target.closest('.btn-eliminar-prenda');
         if (btnDelCat) {
             idCatalogoToDelete = btnDelCat.getAttribute('data-id');
-            const modalEl = document.getElementById('deleteCatalogoModal');
-            if(modalEl) new bootstrap.Modal(modalEl).show();
+            const mEl = document.getElementById('deleteCatalogoModal');
+            if(mEl) new bootstrap.Modal(mEl).show();
         }
 
         // H. Confirmar Borrado Catálogo
@@ -228,9 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
              const fd = new FormData(); fd.append('accion', 'eliminar'); fd.append('id', idCatalogoToDelete);
              fetch('php/catalog_management.php', { method: 'POST', body: fd }).then(r => r.json()).then(d => { 
                  if(d.success) {
-                    const modalEl = document.getElementById('deleteCatalogoModal');
-                    const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                    modalInstance.hide();
+                    const mEl = document.getElementById('deleteCatalogoModal');
+                    const mInst = bootstrap.Modal.getInstance(mEl) || new bootstrap.Modal(mEl);
+                    if(mInst) mInst.hide();
                     
                     const row = document.getElementById(`prenda-${idCatalogoToDelete}`);
                     if(row) row.remove();
@@ -251,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- 7. CONFIRMACIONES ---
+    // --- 7. CONFIRMACIONES FINALES ---
 
     const btnConfDelete = document.getElementById('confirmDeleteBtn');
     if (btnConfDelete) {
@@ -286,22 +292,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    
-    
-    // --- 8. VALIDACIÓN DEL FORMULARIO DE PEDIDO (VERSION RENOVADA) ---
+    // --- 8. VALIDACIÓN DEL FORMULARIO DE PEDIDO (CORREGIDA) ---
     const pedidoForm = document.getElementById('pedidoForm');
     if (pedidoForm) {
         pedidoForm.addEventListener('submit', function(e) {
+            
             const pedidoIdField = document.getElementById('pedidoId');
             const isEdit = pedidoIdField && pedidoIdField.value !== "";
             
-            const hasImg = document.getElementById('imagenes').files.length > 0;
-            const hasPaleta = document.getElementById('paletaColor').files.length > 0;
-            const hasCotizacion = document.getElementById('cotizacion').files.length > 0;
+            const inputImg = document.getElementById('imagenes');
+            const inputPaleta = document.getElementById('paletaColor');
+            const inputCotizacion = document.getElementById('cotizacion');
 
-            const prevImg = document.getElementById('imagenesPreview')?.children.length > 0;
-            const prevPaleta = document.getElementById('paletaColorPreview')?.children.length > 0;
-            const prevCotizacion = document.getElementById('cotizacionPreview')?.children.length > 0;
+            const hasImg = inputImg && inputImg.files.length > 0;
+            const hasPaleta = inputPaleta && inputPaleta.files.length > 0;
+            const hasCotizacion = inputCotizacion && inputCotizacion.files.length > 0;
+
+            const prevImgContainer = document.getElementById('imagenesPreview');
+            const prevPaletaContainer = document.getElementById('paletaColorPreview');
+            const prevCotizacionContainer = document.getElementById('cotizacionPreview');
+
+            const prevImg = prevImgContainer && prevImgContainer.children.length > 0;
+            const prevPaleta = prevPaletaContainer && prevPaletaContainer.children.length > 0;
+            const prevCotizacion = prevCotizacionContainer && prevCotizacionContainer.children.length > 0;
 
             const validImg = hasImg || (isEdit && prevImg);
             const validPaleta = hasPaleta || (isEdit && prevPaleta);
@@ -313,36 +326,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!validCotizacion) errores.push("Archivo de Cotización");
 
             if (errores.length > 0) {
-                e.preventDefault(); 
+                e.preventDefault(); // Detiene el envío
                 
-                const modalEl = document.getElementById('fileSizeModal');
-                const title = document.getElementById('fileSizeTitle');
-                const body = document.getElementById('fileSizeBody');
+                // Usamos el NUEVO modal validationModal
+                const modalEl = document.getElementById('validationModal');
+                const body = document.getElementById('validationBody');
 
-                if (modalEl && title && body) {
-                    // Diseño Renovado
-                    title.innerHTML = `<i class='bx bx-error-circle text-danger' style='font-size: 3rem;'></i><br>
-                                       <span class="text-dark fw-bolder h5">¡Atención!</span>`;
+                if (modalEl && body && validationModal) {
                     
                     let listaErrores = errores.map(err => 
                         `<div class="d-flex align-items-center mb-2 justify-content-center text-danger">
-                            <i class='bx bx-x-circle me-2'></i> <span>${err}</span>
+                            <i class='bx bx-x-circle me-2'></i> <span class="small fw-bold">${err}</span>
                          </div>`
                     ).join('');
 
                     body.innerHTML = `
-                        <p class="text-muted small mb-4">Para guardar este pedido es necesario que adjuntes los siguientes archivos:</p>
-                        <div class="bg-light p-3 rounded-3 mb-2">
-                            ${listaErrores}
-                        </div>
+                        <p class="text-muted small mb-4">Para guardar este pedido es necesario adjuntar:</p>
+                        <div class="bg-light p-3 rounded-3 mb-2">${listaErrores}</div>
                     `;
 
-                    new bootstrap.Modal(modalEl).show();
+                    validationModal.show();
                 } else {
+                    // Fallback seguro por si falla el modal
                     alert("Faltan archivos obligatorios:\n" + errores.join("\n"));
                 }
             }
         });
     }
-
 });
