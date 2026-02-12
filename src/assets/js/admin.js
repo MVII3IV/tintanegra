@@ -121,6 +121,8 @@ function lanzarModalConDelay(pedido) {
 // --- GESTIÓN DE TALLAS ---
 function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '', isCopy = false) {
     const tallasContainer = document.getElementById('tallasContainer');
+    
+    // Lógica para copiar datos de la fila anterior (mantener igual)
     if (isCopy === true && talla === '' && prendaId === '') {
         const filas = tallasContainer.querySelectorAll('.talla-entry');
         if (filas.length > 0) {
@@ -131,17 +133,34 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
             cantidad = 1;
         }
     }
+    
     const div = document.createElement('div');
     div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
     
-    // Generar opciones (Asumiendo window.catalogoPrendas existe)
+    // Generar opciones de prendas (mantener igual)
     let opts = '<option value="">-- Prenda --</option>';
     [...(window.catalogoPrendas||[])].sort((a,b)=>a.tipo_prenda.localeCompare(b.tipo_prenda)).forEach(p=>{
         opts+=`<option value="${p.id}" ${p.id==prendaId?'selected':''}>${p.tipo_prenda} ${p.marca} (${p.modelo})</option>`;
     });
     
+    // --- AQUÍ ESTÁ EL CAMBIO ---
+    // Definimos el listado completo de tallas en orden lógico
+    const todasLasTallas = [
+        // Tallas Niño
+        '2-4 Años', '4-6 Años', '6-8 Años', '8-10 Años', '10-12 Años',
+        // Tallas Juvenil
+        // 'XS Juv', 'S Juv', 'M Juv', 'L Juv', 'XL Juv',
+        // Tallas Adulto (Estándar)
+        'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'
+    ];
+    
     let tallasOpts = '<option value="">-- Talla --</option>';
-    ['XS','S','M','L','XL','XXL'].forEach(t=> tallasOpts+=`<option value="${t}" ${t==talla?'selected':''}>${t}</option>`);
+    todasLasTallas.forEach(t => {
+        // Marcamos como seleccionada si coincide con el parámetro
+        const selected = (t === talla) ? 'selected' : '';
+        tallasOpts += `<option value="${t}" ${selected}>${t}</option>`;
+    });
+    // ---------------------------
 
     div.innerHTML = `<select class="form-select form-select-sm" name="prenda_id[]" style="flex:2" required>${opts}</select>
         <select class="form-select form-select-sm" name="talla[]" style="flex:1" required>${tallasOpts}</select>
@@ -153,5 +172,6 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     div.querySelector('input[name="cantidad[]"]').addEventListener('input', () => {
         if (typeof calcularTotalPiezas === 'function') calcularTotalPiezas();
     });
+    
     if (typeof calcularTotalPiezas === 'function') calcularTotalPiezas();
 }
