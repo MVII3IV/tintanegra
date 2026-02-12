@@ -122,7 +122,7 @@ function lanzarModalConDelay(pedido) {
 function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '', isCopy = false) {
     const tallasContainer = document.getElementById('tallasContainer');
     
-    // Lógica para copiar datos de la fila anterior (mantener igual)
+    // Copiar datos de la última fila si es necesario
     if (isCopy === true && talla === '' && prendaId === '') {
         const filas = tallasContainer.querySelectorAll('.talla-entry');
         if (filas.length > 0) {
@@ -137,38 +137,45 @@ function addTallaEntry(talla = '', cantidad = 1, color = '#000000', prendaId = '
     const div = document.createElement('div');
     div.className = 'talla-entry d-flex align-items-center gap-2 mb-2 bg-light p-2 rounded';
     
-    // Generar opciones de prendas (mantener igual)
+    // --- GENERACIÓN DE OPCIONES (CON DESC) ---
     let opts = '<option value="">-- Prenda --</option>';
-    [...(window.catalogoPrendas||[])].sort((a,b)=>a.tipo_prenda.localeCompare(b.tipo_prenda)).forEach(p=>{
-        opts+=`<option value="${p.id}" ${p.id==prendaId?'selected':''}>${p.tipo_prenda} ${p.marca} (${p.modelo})</option>`;
-    });
     
-    // --- AQUÍ ESTÁ EL CAMBIO ---
-    // Definimos el listado completo de tallas en orden lógico
+    // Ordenar alfabéticamente
+    const catalogo = [...(window.catalogoPrendas || [])].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
+
+    catalogo.forEach(p => {
+        const selected = (p.id == prendaId) ? 'selected' : '';
+        // Validamos si existe descripción
+        const descripcionTexto = p.descripcion ? ` - ${p.descripcion}` : '';
+        
+        // Construimos la opción con la descripción
+        opts += `<option value="${p.id}" ${selected}>${p.tipo_prenda} ${p.marca} (${p.modelo})${descripcionTexto}</option>`;
+    });
+
+    // --- LISTADO DE TALLAS ACTUALIZADO ---
     const todasLasTallas = [
-        // Tallas Niño
-        '2-4 Años', '4-6 Años', '6-8 Años', '8-10 Años', '10-12 Años',
-        // Tallas Juvenil
-        // 'XS Juv', 'S Juv', 'M Juv', 'L Juv', 'XL Juv',
-        // Tallas Adulto (Estándar)
-        'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'
+        '2-4 Años', '4-6 Años', '6-8 Años', '8-10 Años', '10-12 Años', // Niño
+       // 'XS Juv', 'S Juv', 'M Juv', 'L Juv', 'XL Juv',                // Juvenil
+        'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'                       // Adulto
     ];
     
     let tallasOpts = '<option value="">-- Talla --</option>';
     todasLasTallas.forEach(t => {
-        // Marcamos como seleccionada si coincide con el parámetro
         const selected = (t === talla) ? 'selected' : '';
         tallasOpts += `<option value="${t}" ${selected}>${t}</option>`;
     });
-    // ---------------------------
 
-    div.innerHTML = `<select class="form-select form-select-sm" name="prenda_id[]" style="flex:2" required>${opts}</select>
+    // HTML Final
+    div.innerHTML = `
+        <select class="form-select form-select-sm" name="prenda_id[]" style="flex:2" required>${opts}</select>
         <select class="form-select form-select-sm" name="talla[]" style="flex:1" required>${tallasOpts}</select>
         <input type="number" class="form-control form-control-sm" name="cantidad[]" value="${cantidad}" min="1" style="width:70px">
         <input type="color" class="form-control form-control-color border-0" name="color[]" value="${color}" style="width:40px">
         <button type="button" class="btn btn-danger btn-sm remove-talla"><i class="bx bx-trash"></i></button>`;
     
     tallasContainer.appendChild(div);
+    
+    // Listeners
     div.querySelector('input[name="cantidad[]"]').addEventListener('input', () => {
         if (typeof calcularTotalPiezas === 'function') calcularTotalPiezas();
     });

@@ -51,6 +51,7 @@ try {
             tallas
         FROM pedidos 
         WHERE YEAR(fechaInicio) = :anio
+        AND status = 'Entregada'
     ";
 
     $stmt = $pdo->prepare($query);
