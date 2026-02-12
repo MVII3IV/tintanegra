@@ -223,14 +223,24 @@ require_once 'php/config.php';
                 tbody.innerHTML = '';
 
                 if (data.success && data.pedidos.length > 0) {
+                    // 1. Filtrado (Esto ya lo tenías)
                     const filtrados = data.pedidos.filter(p => {
                         const coincideEstado = estadoFiltro === "" || p.status === estadoFiltro;
                         const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda) || p.id.toLowerCase().includes(busqueda);
-                        
-                        // Si el interruptor esta activo, filtramos lo entregado (a menos que el usuario busque por nombre)
                         const cumpleVista = soloPendientes ? (p.status !== 'Entregada') : true;
-
                         return coincideEstado && coincideBusqueda && cumpleVista;
+                    });
+
+                    // 2. ORDENAMIENTO POR FECHA (NUEVO CÓDIGO)
+                    // -----------------------------------------------------
+                    filtrados.sort((a, b) => {
+                        const fechaA = new Date(a.fechaEntrega);
+                        const fechaB = new Date(b.fechaEntrega);
+                        
+                        // Orden Ascendente (Lo más próximo a vencer sale primero)
+                        return fechaA - fechaB; 
+                        
+                        // NOTA: Si quisieras lo más lejano primero, usa: return fechaB - fechaA;
                     });
 
                     filtrados.forEach(p => {

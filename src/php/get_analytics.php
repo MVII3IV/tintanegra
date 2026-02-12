@@ -5,25 +5,24 @@ header('Content-Type: application/json');
 
 try {
     // 1. Determinar qué año consultar
-    // Si envían ?year=2024 usamos ese, si no, usamos el actual.
     $anioSolicitado = isset($_GET['year']) ? intval($_GET['year']) : (int)date('Y');
     
-    // 2. Obtener lista de años disponibles (Para llenar el select en el frontend)
-    // Buscamos todos los años distintos donde haya pedidos
-    $stmtYears = $pdo->query("SELECT DISTINCT YEAR(fechaInicio) as anio FROM pedidos WHERE fechaInicio IS NOT NULL ORDER BY anio DESC");
+    // 2. Obtener lista de años disponibles (CORREGIDO A FECHA ENTREGA)
+    // Buscamos los años basándonos en cuándo se ENTREGARON los pedidos
+    $stmtYears = $pdo->query("SELECT DISTINCT YEAR(fechaEntrega) as anio FROM pedidos WHERE fechaEntrega IS NOT NULL AND status = 'Entregada' ORDER BY anio DESC");
     $aniosDisponibles = $stmtYears->fetchAll(PDO::FETCH_COLUMN);
 
     // Si la base de datos está vacía, al menos ponemos el año actual
     if (empty($aniosDisponibles)) {
         $aniosDisponibles = [$anioSolicitado];
     }
-    // Asegurarnos que el año solicitado esté en la lista (por si es un año futuro sin ventas aún)
+    // Asegurarnos que el año solicitado esté en la lista
     if (!in_array($anioSolicitado, $aniosDisponibles)) {
         array_unshift($aniosDisponibles, $anioSolicitado);
-        rsort($aniosDisponibles); // Reordenar descendente
+        rsort($aniosDisponibles); 
     }
 
-    // 3. Generar esqueleto de meses para el año solicitado
+    // 3. Generar esqueleto de meses
     $mesesES = [
         1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
         5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
@@ -33,7 +32,7 @@ try {
     $mesesData = [];
     for ($m = 1; $m <= 12; $m++) {
         $claveMes = $anioSolicitado . '-' . str_pad($m, 2, '0', STR_PAD_LEFT);
-        $nombreMes = $mesesES[$m]; // Solo el nombre del mes para limpiar la gráfica visualmente
+        $nombreMes = $mesesES[$m]; 
         
         $mesesData[$claveMes] = [
             'label' => $nombreMes, 
@@ -43,14 +42,14 @@ try {
         ];
     }
 
-    // 4. Consultar datos del año específico
+    // 4. Consultar datos (CORREGIDO: USAR FECHA ENTREGA)
     $query = "
         SELECT 
-            DATE_FORMAT(fechaInicio, '%Y-%m') as mes_anio,
+            DATE_FORMAT(fechaEntrega, '%Y-%m') as mes_anio,  /* <--- CAMBIO CLAVE AQUÍ */
             costo,
             tallas
         FROM pedidos 
-        WHERE YEAR(fechaInicio) = :anio
+        WHERE YEAR(fechaEntrega) = :anio                     /* <--- Y AQUÍ */
         AND status = 'Entregada'
     ";
 
@@ -87,8 +86,8 @@ try {
 
     echo json_encode([
         'success' => true,
-        'year' => $anioSolicitado,       // Confirmamos qué año mostramos
-        'available_years' => $aniosDisponibles, // Enviamos la lista para el dropdown
+        'year' => $anioSolicitado,
+        'available_years' => $aniosDisponibles,
         'labels' => $labels,
         'ventas' => $ventas,
         'pedidos' => $pedidos,
