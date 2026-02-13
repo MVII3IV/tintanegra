@@ -7,9 +7,9 @@ try {
     // 1. Determinar qué año consultar
     $anioSolicitado = isset($_GET['year']) ? intval($_GET['year']) : (int)date('Y');
     
-    // 2. Obtener lista de años disponibles (CORREGIDO A FECHA ENTREGA)
-    // Buscamos los años basándonos en cuándo se ENTREGARON los pedidos
-    $stmtYears = $pdo->query("SELECT DISTINCT YEAR(fechaEntrega) as anio FROM pedidos WHERE fechaEntrega IS NOT NULL AND status = 'Entregada' ORDER BY anio DESC");
+    // 2. Obtener lista de años disponibles (CAMBIO: BASADO EN FECHA INICIO)
+    // Buscamos los años basándonos en cuándo se REGISTRARON los pedidos concretados
+    $stmtYears = $pdo->query("SELECT DISTINCT YEAR(fechaInicio) as anio FROM pedidos WHERE fechaInicio IS NOT NULL AND status = 'Entregada' ORDER BY anio DESC");
     $aniosDisponibles = $stmtYears->fetchAll(PDO::FETCH_COLUMN);
 
     // Si la base de datos está vacía, al menos ponemos el año actual
@@ -42,14 +42,16 @@ try {
         ];
     }
 
-    // 4. Consultar datos (CORREGIDO: USAR FECHA ENTREGA)
+    // 4. Consultar datos (CAMBIO: USAR FECHA INICIO)
+    // Ahora agrupamos por el mes de REGISTRO, pero mantenemos el status 'Entregada'
+    // para contar solo dinero real seguro.
     $query = "
         SELECT 
-            DATE_FORMAT(fechaEntrega, '%Y-%m') as mes_anio,  /* <--- CAMBIO CLAVE AQUÍ */
+            DATE_FORMAT(fechaInicio, '%Y-%m') as mes_anio,  /* <--- AGRUPAR POR REGISTRO */
             costo,
             tallas
         FROM pedidos 
-        WHERE YEAR(fechaEntrega) = :anio                     /* <--- Y AQUÍ */
+        WHERE YEAR(fechaInicio) = :anio                     /* <--- FILTRAR AÑO DE REGISTRO */
         AND status = 'Entregada'
     ";
 
@@ -67,6 +69,11 @@ try {
 
             $tallas = json_decode($row['tallas'], true);
             if (is_array($tallas)) {
+                // Verificar si viene como string JSON o array directo
+                if (count($tallas) > 0 && is_string($tallas[0])) { 
+                     // Caso raro doble encoding, pero por seguridad
+                }
+                
                 foreach ($tallas as $item) {
                     $qty = isset($item['cantidad']) ? (int)$item['cantidad'] : 0;
                     $mesesData[$key]['prendas'] += $qty;
