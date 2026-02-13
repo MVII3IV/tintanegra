@@ -73,6 +73,11 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
                         <label class="btn btn-outline-primary btn-sm px-3" for="modePrendas">
                             <i class='bx bxs-t-shirt'></i> Prendas
                         </label>
+
+                        <input type="radio" class="btn-check" name="chartMode" id="modePedidos" autocomplete="off">
+                        <label class="btn btn-outline-primary btn-sm px-3" for="modePedidos">
+                            <i class='bx bx-shopping-bag'></i> Pedidos
+                        </label>
                     </div>
                 </div>
 

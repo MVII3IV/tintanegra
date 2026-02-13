@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('revenueChart');
     const yearSelect = document.getElementById('yearFilter');
 
-    // 1. Carga inicial (sin año específico, el backend decide el actual)
+    // 1. Carga inicial
     if (ctx) {
         loadAnalyticsData(); 
     }
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Evento: Cambio de Modo (Dinero vs Prendas)
+    // 3. Eventos: Cambio de Modo (Dinero vs Prendas vs Pedidos)
     document.getElementById('modeVentas').addEventListener('change', () => {
         currentMode = 'ventas';
         if (analyticsData) updateChart(ctx);
@@ -30,11 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMode = 'prendas';
         if (analyticsData) updateChart(ctx);
     });
+    // --- NUEVO LISTENER ---
+    document.getElementById('modePedidos').addEventListener('change', () => {
+        currentMode = 'pedidos';
+        if (analyticsData) updateChart(ctx);
+    });
 });
 
 // Función Principal: Cargar datos del servidor
 function loadAnalyticsData(year = '') {
-    // Si hay año, agregamos el param, si no, va vacío
     const url = year ? `php/get_analytics.php?year=${year}` : 'php/get_analytics.php';
 
     fetch(url)
@@ -42,14 +46,9 @@ function loadAnalyticsData(year = '') {
         .then(data => {
             if (data.success) {
                 analyticsData = data;
-                
-                // Actualizar Dropdown de Años (Solo si es necesario o primera vez)
                 populateYearDropdown(data.available_years, data.year);
-
-                // Renderizar todo
                 updateChart(document.getElementById('revenueChart'));
                 renderCards(data);
-
             } else {
                 console.error("Error API:", data.error);
             }
@@ -57,21 +56,15 @@ function loadAnalyticsData(year = '') {
         .catch(err => console.error(err));
 }
 
-// Función Auxiliar: Llenar el select de años dinámicamente
 function populateYearDropdown(years, currentYear) {
     const select = document.getElementById('yearFilter');
     if (!select) return;
-
-    // Guardamos el valor actual por si acaso, pero preferimos usar currentYear del server
-    select.innerHTML = ''; // Limpiar opciones
-
+    select.innerHTML = ''; 
     years.forEach(y => {
         const option = document.createElement('option');
         option.value = y;
         option.innerText = y;
-        if (parseInt(y) === parseInt(currentYear)) {
-            option.selected = true;
-        }
+        if (parseInt(y) === parseInt(currentYear)) option.selected = true;
         select.appendChild(option);
     });
 }
@@ -83,24 +76,31 @@ function updateChart(ctx) {
 
     let label, dataValues, colorBg, colorBorder, yPrefix;
     const tituloEl = document.getElementById('chartTitle');
-    
-    // Usamos analyticsData.year para mostrar el año en el título de la gráfica
     const yearLabel = analyticsData.year || '';
 
+    // Configuración según el modo seleccionado
     if (currentMode === 'ventas') {
         label = `Ingresos ($) - ${yearLabel}`;
         dataValues = analyticsData.ventas;
-        colorBg = 'rgba(54, 162, 235, 0.6)';
+        colorBg = 'rgba(54, 162, 235, 0.6)'; // Azul
         colorBorder = 'rgba(54, 162, 235, 1)';
         yPrefix = '$';
         if(tituloEl) tituloEl.innerText = `Ingresos Mensuales ${yearLabel}`;
-    } else {
+    } else if (currentMode === 'prendas') {
         label = `Prendas (Unidades) - ${yearLabel}`;
         dataValues = analyticsData.prendas;
-        colorBg = 'rgba(255, 99, 132, 0.6)';
+        colorBg = 'rgba(255, 99, 132, 0.6)'; // Rojo
         colorBorder = 'rgba(255, 99, 132, 1)';
         yPrefix = '';
         if(tituloEl) tituloEl.innerText = `Volumen de Prendas ${yearLabel}`;
+    } else {
+        // --- NUEVO MODO: PEDIDOS ---
+        label = `Pedidos Entregados - ${yearLabel}`;
+        dataValues = analyticsData.pedidos;
+        colorBg = 'rgba(75, 192, 192, 0.6)'; // Verde Azulado (Teal)
+        colorBorder = 'rgba(75, 192, 192, 1)';
+        yPrefix = '';
+        if(tituloEl) tituloEl.innerText = `Frecuencia de Pedidos ${yearLabel}`;
     }
 
     chartInstance = new Chart(ctx, {
@@ -128,6 +128,8 @@ function updateChart(ctx) {
                             let val = context.parsed.y;
                             if (currentMode === 'ventas') {
                                 return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+                            } else if (currentMode === 'pedidos') {
+                                return val + ' pedidos';
                             } else {
                                 return val + ' pzas';
                             }
@@ -141,8 +143,11 @@ function updateChart(ctx) {
                     grid: { color: '#f0f0f0' },
                     ticks: {
                         callback: function(value) {
-                            return yPrefix + (value >= 1000 ? value/1000 + 'k' : value);
-                        }
+                            // Formato eje Y
+                            if(currentMode === 'ventas') return '$' + (value >= 1000 ? value/1000 + 'k' : value);
+                            return value; // Para pedidos y prendas solo el número
+                        },
+                        stepSize: currentMode === 'pedidos' ? 1 : undefined // Para pedidos forzamos enteros si son pocos
                     }
                 },
                 x: { grid: { display: false } }
