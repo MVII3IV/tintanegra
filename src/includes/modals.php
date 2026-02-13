@@ -104,11 +104,6 @@
                             <option value="6-8 Años">6-8 Años</option>
                             <option value="8-10 Años">8-10 Años</option>
                             <option value="10-12 Años">10-12 Años</option>
-                            <option value="XS Juv">XS Juv</option>
-                            <option value="S Juv">S Juv</option>
-                            <option value="M Juv">M Juv</option>
-                            <option value="L Juv">L Juv</option>
-                            <option value="XL Juv">XL Juv</option>
                             <option value="XS">XS</option>
                             <option value="S">S</option>
                             <option value="M">M</option>
@@ -119,7 +114,6 @@
                         </select>
 
                         <input type="color" id="extraColorInput" class="form-control form-control-color border-0 shadow-sm" value="#000000" title="Elegir color" style="width: 40px; padding: 2px;">
-
                         <input id="extraCantidad" type="number" class="form-control form-control-sm" value="1" min="1" style="width: 70px;">
 
                         <button type="button" id="btnAddExtraItem" class="btn btn-primary btn-sm">

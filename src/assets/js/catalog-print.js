@@ -207,12 +207,16 @@ function generarResumenCompra(pedidosCargados) {
 
 
 // --- 3. RECARGAR CATÁLOGO ---
+// --- 3. RECARGAR CATÁLOGO (Y ACTUALIZAR TODOS LOS SELECTS) ---
 function recargarCatalogoAjax() {
     fetch('php/catalog_management.php?accion=listar')
         .then(r => r.json())
         .then(data => {
             if(data.success) {
+                // 1. Actualizar memoria global
                 window.catalogoPrendas = data.catalogo || [];
+                
+                // 2. Actualizar tabla del modal de administración (si está abierto)
                 const tbody = document.getElementById('listaCatalogo');
                 if(tbody) {
                     tbody.innerHTML = '';
@@ -227,6 +231,8 @@ function recargarCatalogoAjax() {
                         tbody.appendChild(row);
                     });
                 }
+
+                // 3. Actualizar selects del formulario principal
                 document.querySelectorAll('select[name="prenda_id[]"]').forEach(select => {
                     const val = select.value;
                     let opts = `<option value="">-- Prenda --</option>`;
@@ -237,6 +243,27 @@ function recargarCatalogoAjax() {
                     });
                     select.innerHTML = opts; select.value = val;
                 });
+
+                // 4. [NUEVO] Actualizar Select de EXTRAS en el Modal de Compra
+                const extraSelect = document.getElementById('extraPrendaSelect');
+                if (extraSelect) {
+                    // Limpiamos las opciones viejas
+                    extraSelect.innerHTML = '';
+                    
+                    // Volvemos a llenar con el catálogo fresco
+                    const sortedCatalog = [...window.catalogoPrendas].sort((a, b) => a.tipo_prenda.localeCompare(b.tipo_prenda));
+                    
+                    sortedCatalog.forEach(p => {
+                        const option = document.createElement('option');
+                        // Usamos el mismo formato estandarizado
+                        const desc = p.descripcion ? ` - ${p.descripcion}` : '';
+                        const textoCompleto = `${p.tipo_prenda} ${p.marca} (${p.modelo})${desc}`;
+                        
+                        option.value = textoCompleto;
+                        option.innerText = textoCompleto;
+                        extraSelect.appendChild(option);
+                    });
+                }
             }
         });
 }

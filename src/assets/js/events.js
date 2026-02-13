@@ -314,8 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const prevImg = prevImgContainer && prevImgContainer.children.length > 0;
             const prevPaleta = prevPaletaContainer && prevPaletaContainer.children.length > 0;
-            const prevCotizacion = prevCotizacionContainer && prevCotizacionContainer.children.length > 0;
-
+            const prevCotizacion = prevCotizacionContainer && prevCotizacionContainer.children.l 
             const validImg = hasImg || (isEdit && prevImg);
             const validPaleta = hasPaleta || (isEdit && prevPaleta);
             const validCotizacion = hasCotizacion || (isEdit && prevCotizacion);
