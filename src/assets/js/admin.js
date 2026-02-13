@@ -24,6 +24,14 @@ function cargarPedidos(nombre = '') {
             if (data.success) { // Quitamos la condición de length > 0 para que siempre entre
                 pedidosCargados = data.pedidos || [];
 
+                // --- AGREGAR ESTO: ORDENAR POR FECHA DE ENTREGA (ASCENDENTE) ---
+                pedidosCargados.sort((a, b) => {
+                    // Convertimos las strings de fecha a objetos Date para comparar
+                    const fechaA = new Date(a.fechaEntrega);
+                    const fechaB = new Date(b.fechaEntrega);
+                    return fechaA - fechaB; // El menor (fecha más cercana) va primero
+                });
+                
                 // --- (AQUÍ VA TU CÓDIGO DE GENERAR LA TABLA - LO DEJAMOS IGUAL) ---
                 let html = `<div class="table-responsive"><table class="table table-hover align-middle">
                     <thead>

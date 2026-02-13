@@ -83,9 +83,54 @@
                 <h5 class="modal-title"><i class="bx bx-list-check me-2"></i>Lista de Compra Consolidada</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+            
             <div class="modal-body p-4">
                 <div id="listaCompraContent"></div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold text-primary mb-2"><i class='bx bx-plus-circle'></i> Agregar Adicionales / Stock</h6>
+
+
+                    <div class="bg-light p-2 rounded d-flex gap-2 align-items-center flex-wrap">
+                        
+                        <select id="extraPrendaSelect" class="form-select form-select-sm" style="flex: 2;">
+                            <option value="">-- Seleccionar Prenda --</option>
+                        </select>
+
+                        <select id="extraTallaSelect" class="form-select form-select-sm" style="width: 100px;">
+                            <option value="">-- Talla --</option>
+                            <option value="2-4 Años">2-4 Años</option>
+                            <option value="4-6 Años">4-6 Años</option>
+                            <option value="6-8 Años">6-8 Años</option>
+                            <option value="8-10 Años">8-10 Años</option>
+                            <option value="10-12 Años">10-12 Años</option>
+                            <option value="XS Juv">XS Juv</option>
+                            <option value="S Juv">S Juv</option>
+                            <option value="M Juv">M Juv</option>
+                            <option value="L Juv">L Juv</option>
+                            <option value="XL Juv">XL Juv</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                            <option value="3XL">3XL</option>
+                        </select>
+
+                        <input type="color" id="extraColorInput" class="form-control form-control-color border-0 shadow-sm" value="#000000" title="Elegir color" style="width: 40px; padding: 2px;">
+
+                        <input id="extraCantidad" type="number" class="form-control form-control-sm" value="1" min="1" style="width: 70px;">
+
+                        <button type="button" id="btnAddExtraItem" class="btn btn-primary btn-sm">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </div>
+
+
+                </div>
             </div>
+
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" onclick="imprimirListaProfesional()">
